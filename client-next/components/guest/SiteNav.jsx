@@ -109,11 +109,15 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
     )
   }
 
-  const actions = (
+  // Nel layout classico i pulsanti «testo» sono voci di menu (le àncore di un
+  // sito di una pagina sola): stanno al centro, fra il logo e la destra, e a
+  // destra restano solo i pulsanti veri. Da telefono vanno tutti nella tendina.
+  const vociTesto = layout === 'classic' ? buttons.filter(b => b.variant === 'text') : []
+  const actions = (perDesktop = false) => (
     <>
       {pwa && <a href={pwa.url} style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}`, whiteSpace: 'nowrap' }}>{pwa.label}</a>}
       {bookingUrl && <a href={safeUrl(bookingUrl)} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: readableOn('#ffffff', primary, '#1a1a2e'), background: primary, whiteSpace: 'nowrap' }}>Prenota</a>}
-      {buttons.map(b => (
+      {buttons.filter(b => !perDesktop || !vociTesto.includes(b)).map(b => (
         <a key={b.id} href={safeUrl(b.url)} target={String(b.url).startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
           style={buttonStyle(b, { primary, secondary })}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
@@ -125,9 +129,18 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
   )
 
   const menuRow = hasMenu && <div className={`snav-desktop snav-h-${hover}`} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>{topPages.map(menuLink)}</div>
+  const menuCentrale = (
+    <div className={`snav-desktop snav-h-${hover}`} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, minWidth: 0 }}>
+      {topPages.map(menuLink)}
+      {vociTesto.map(b => (
+        <a key={b.id} href={safeUrl(b.url)} className="snav-link" target={String(b.url).startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
+          style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>{b.label}</a>
+      ))}
+    </div>
+  )
   const actionRow = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-      {hasActions && <div className="snav-desktop" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>{actions}</div>}
+      {hasActions && <div className="snav-desktop" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>{actions(true)}</div>}
       <LangToggle lang={lang} color={navTextColor} />
       {(hasMenu || hasActions) && <button className="snav-burger" onClick={() => setMobileOpen(v => !v)} aria-label="Menu">{mobileOpen ? '✕' : '☰'}</button>}
     </div>
@@ -204,7 +217,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
       ) : (
         <nav className="snav snav-classic">
           {brand}
-          {menuRow}
+          {vociTesto.length ? menuCentrale : menuRow}
           {actionRow}
         </nav>
       )}
@@ -216,7 +229,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
               style={{ color: navTextColor, textDecoration: 'none', fontSize: 15, padding: '11px 4px', borderBottom: `1px solid ${navBorderColor}` }}>{p.titolo}</a>
           ))}
           {hasActions && (
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>{actions}</div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>{actions()}</div>
           )}
         </div>
       )}

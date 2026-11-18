@@ -86,6 +86,10 @@ try {
     stato.entita = e.id; stato.slug = e.slug; salva(); console.log('struttura creata', e.id, e.slug)
   }
   const ID = stato.entita
+  // Ogni «Prenota ora» apre WhatsApp col messaggio già scritto (decisione di
+  // Francesco, 18/11): il cliente prenota parlando con lui. Il modulo in fondo
+  // resta per chi preferisce scrivere.
+  const PRENOTA = 'https://wa.me/393282262040?text=' + encodeURIComponent('Ciao, vorrei prenotare un soggiorno al Panoramic Luxury Suite Penthouse.')
 
   // ── Le immagini ────────────────────────────────────────────────────────────
   async function carica(chiave, file) {
@@ -131,9 +135,10 @@ try {
   // Avorio caldo, antracite e bronzo: il logo è nero e grigio, e un accento
   // caldo dà il registro «lusso» senza competere con le foto. Tutto in Jost,
   // titoli a peso 300: il tratto sottile e geometrico del logo (accoppiata
-  // «Essenziale»). Intestazione chiara e centrata: quella scura «a pillola» è
+  // «Essenziale»). Intestazione chiara, logo a sinistra e menu al centro: quella scura «a pillola» è
   // la stessa di Metodo TVB, e un sito di lusso non deve sembrare un altro.
   await api('PATCH', `/api/properties/${ID}`, {
+    name: 'Panoramic Luxury Suite Penthouse', // come il logo (era «Panoramix»)
     logo_url: F.logo, logo_dark_url: F.logoChiaro, cover_url: F.jacuzziLed,
     description: 'Attico di lusso nel centro di Terni con terrazza panoramica di oltre 80 mq, Jacuzzi privata, pergola bioclimatica e cromoterapia. Ideale per coppie.',
     rules: 'La Jacuzzi esterna è a disposizione esclusiva degli ospiti ed è pronta all’uso tutto l’anno.\nSilenzio dopo le 23:00.\nNon sono ammessi party né ospiti non registrati.',
@@ -145,20 +150,20 @@ try {
       seo_title: 'Suite Panoramic Attico con Jacuzzi Privata – Terni Centro',
       seo_description: 'Attico di lusso nel centro di Terni con terrazza panoramica di oltre 80 mq, Jacuzzi privata, pergola bioclimatica e cromoterapia. Ideale per coppie.',
       header_cfg: {
-        style: 'light', layout: 'centered', hover: 'underline', always_visible: true, logo_in_nav: true, scroll_behavior: 'smart',
+        style: 'light', layout: 'classic', hover: 'underline', always_visible: true, logo_in_nav: true, scroll_behavior: 'smart',
         buttons: [
           { id: 'suite', label: 'La Suite', url: '#la-suite', shape: 'pill', variant: 'text', color: '#1d1c1a' },
           { id: 'wellness', label: 'Wellness', url: '#terrazza-wellness', shape: 'pill', variant: 'text', color: '#1d1c1a' },
           { id: 'interni', label: 'Interni', url: '#interni', shape: 'pill', variant: 'text', color: '#1d1c1a' },
           { id: 'posizione', label: 'Posizione', url: '#posizione', shape: 'pill', variant: 'text', color: '#1d1c1a' },
-          { id: 'prenota', label: 'Prenota ora', url: '#prenota', shape: 'pill', variant: 'solid', color: 'primary' },
+          { id: 'prenota', label: 'Prenota ora', url: PRENOTA, shape: 'pill', variant: 'solid', color: 'primary' },
         ],
       },
       footer_cfg: {
         layout: 'full', style: 'dark', show_socials: true, show_description: true, show_contact: true,
         copyright: '© 2026 Suite Panoramic Attico · CIN IT055032C202034410',
         extra_links: [
-          { id: 'f-prenota', label: 'Prenota', url: '#prenota' },
+          { id: 'f-prenota', label: 'Prenota', url: PRENOTA },
           { id: 'f-posizione', label: 'Posizione', url: '#posizione' },
           { id: 'f-info', label: 'Info utili', url: '#info-utili' },
         ],
@@ -190,11 +195,11 @@ try {
       title: 'Luxury Panoramic Suite con <mark>Jacuzzi</mark> & Terrazza',
       tagline: 'Un rifugio esclusivo nel cuore di Terni. Jacuzzi privata, vista sulla città e totale privacy.',
       bg_image_url: F.jacuzziLed, focal: '50% 60%', overlay_opacity: 0.5,
-      cta1_text: 'Prenota ora', cta1_url: '#prenota', cta2_text: 'Scopri la suite', cta2_url: '#la-suite', height: 'full',
+      cta1_text: 'Prenota ora', cta1_url: PRENOTA, cta2_text: 'Scopri la suite', cta2_url: '#la-suite', height: 'full',
     }),
     b('scorrevole', { items: [{ text: 'Jacuzzi privata tutto l’anno' }, { text: 'Terrazza 80+ mq' }, { text: 'Centro storico' }, { text: 'Solo per te' }] }, { bg: 'dark' }),
     b('foto_testo', {
-      title: 'Benvenuti al Suite Panoramic Attico', image_url: F.soggiorno, inverti: false, button_label: 'Prenota ora', button_url: '#prenota',
+      title: 'Benvenuti al Suite Panoramic Attico', image_url: F.soggiorno, inverti: false, button_label: 'Prenota ora', button_url: PRENOTA,
       text: testo(
         'Un attico meraviglioso in un palazzo di recente costruzione, nel centro di Terni. Arredato con gusto ed eleganza e curato nei minimi particolari.',
         'Rilassati nella tua Jacuzzi privata sulla terrazza panoramica, goditi il tramonto e la vista sulla città. Design moderno, camera king-size, cucina attrezzata e totale privacy: l’ambiente ideale per coppie che cercano un soggiorno romantico, elegante e indimenticabile.'),
@@ -249,7 +254,7 @@ try {
       'Non sono ammessi party né ospiti non registrati.',
       'L’attico è pensato per coppie in cerca di relax, privacy e comfort.',
     ] }) }, { anchor: 'info-utili', etichetta: 'Info utili' }),
-    b('cta_banner', { title: 'Il tuo soggiorno romantico a Terni ti aspetta', subtitle: 'Jacuzzi privata, terrazza panoramica e totale privacy. Prenota ora la tua fuga a due.', button_text: 'Prenota ora', button_url: '#prenota' },
+    b('cta_banner', { title: 'Il tuo soggiorno romantico a Terni ti aspetta', subtitle: 'Jacuzzi privata, terrazza panoramica e totale privacy. Prenota ora la tua fuga a due.', button_text: 'Prenota ora', button_url: PRENOTA },
       { bg: 'image', bg_image: F.jacuzziLed, bg_overlay: 0.55, bg_focal: '50% 55%', paddingY: 'spacious' }),
     // Titolo e modulo sullo stesso fondo: si leggono come una sezione sola.
     b('titolo', { title: 'Prenota il tuo soggiorno', subtitle: 'Scrivici le date: ti risponderemo con la disponibilità.', size: 'medium' }, { anchor: 'prenota', etichetta: 'Prenota', bg: 'light', paddingY: 'compact' }),
