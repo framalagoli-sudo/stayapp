@@ -89,8 +89,10 @@ try {
     await a.from('profiles').upsert({ id: u.user.id, role: 'admin_azienda', full_name: 'ZZ', azienda_id: aziendaId }, { onConflict: 'id' })
     const { data: s } = await createClient(SUPABASE_URL, process.env.SUPABASE_ANON_KEY, { auth: { persistSession: false } }).auth.signInWithPassword({ email, password })
     utenti.push(u.user.id)
+    sessioni[etichetta] = s.session
     return s.session.access_token
   }
+  const sessioni = {}
   const tok = await nuovoTitolare(az.id, 'tit')
   const H = { Authorization: `Bearer ${tok}`, 'content-type': 'application/json' }
   const lista = await (await fetch(`${BASE}/api/form-builder/${form2.id}/submissions?spam=1`, { headers: H })).json()
@@ -118,6 +120,25 @@ try {
   })
   ok(info?.ultima && !info.vecchia, 'la trappola è l\'ultimo campo del modulo', JSON.stringify(info))
   ok(JSON.stringify(info?.completamenti) === JSON.stringify(['name', 'email', 'tel']), 'nome, email e telefono dichiarano il completamento automatico', JSON.stringify(info?.completamenti))
+  // ── Il pannello, come lo apre il titolare ─────────────────────────────────
+  console.log('\n4. NEL PANNELLO (risposte del modulo)\n')
+  const ref = new URL(SUPABASE_URL).hostname.split('.')[0]
+  const ctx = await b.newContext({ locale: 'it-IT', viewport: { width: 1280, height: 900 },
+    storageState: { cookies: [], origins: [{ origin: new URL(BASE).origin, localStorage: [{ name: `sb-${ref}-auth-token`, value: JSON.stringify(sessioni.tit) }] }] } })
+  const pp = await ctx.newPage()
+  await pp.goto(`${BASE}/admin/form-builder/${form2.id}/submissions`, { waitUntil: 'domcontentloaded' })
+  await pp.waitForSelector('[data-vista="spam"]', { timeout: 45000 })
+  const etichette = await pp.evaluate(() => [...document.querySelectorAll('[data-vista]')].map(x => x.textContent.trim()))
+  ok(JSON.stringify(etichette) === JSON.stringify(['Richieste (3)', 'Possibile spam (1)']), 'le due linguette coi numeri giusti', JSON.stringify(etichette))
+  await pp.click('[data-vista="spam"]')
+  // Le righe di «Richieste» restano a schermo finché la vista spam non arriva.
+  await pp.getByRole('button', { name: 'Non è spam' }).waitFor({ timeout: 20000 })
+  const riga = await pp.evaluate(() => { const r = document.querySelectorAll('[data-risposta]'); return { n: r.length, testo: r[0]?.textContent || '' } })
+  ok(riga.n === 1 && /2 secondi/.test(riga.testo) && /Non è spam/.test(riga.testo), 'la linguetta spam mostra la risposta col motivo e «Non è spam»', JSON.stringify(riga))
+  await pp.getByRole('button', { name: 'Non è spam' }).click()
+  await pp.waitForFunction(() => /Possibile spam \(0\)/.test(document.body.innerText), null, { timeout: 20000 }).catch(() => {})
+  const dopoClic = (await a.from('form_submissions').select('possibile_spam, contatto_id').eq('id', rapida.id).single()).data
+  ok(!dopoClic.possibile_spam && dopoClic.contatto_id, 'il clic su «Non è spam» la sposta e crea il contatto', JSON.stringify(dopoClic))
   await b.close()
 } catch (e) {
   console.error('ERRORE:', e.message); problemi++

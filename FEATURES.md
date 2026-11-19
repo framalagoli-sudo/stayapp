@@ -480,6 +480,7 @@ Modulo **incluso nel prodotto**, chiesto da due clienti (Garage 22, Debora Resin
 - [x] URL redirect post-invio configurabile
 - [x] Embed via iframe (`/form?token=...`) + codice copiabile
 - [x] Tabella risposte con export CSV
+- [x] Antispam che non perde persone (18–19/11/2026): il campo trappola sta in fondo al modulo e da solo non scarta (`lib/campo-trappola.js`); le risposte sospette si **salvano** in «Possibile spam» col motivo (parole tipiche, 2+ link, inviata in meno di 2 s, Turnstile rifiutato — `lib/spam-moduli.js`, migration 147), senza contatto, risposta automatica né webhook; linguette «Richieste / Possibile spam» con «Segna come spam» / «Non è spam». Tolte le regole su alfabeti non latini e «casino». Sonda `tests/probe-campo-trappola.mjs` (pannello compreso)
 - **Migration da eseguire su Supabase:** `033_form_builder.sql`
 
 ### Proposals / Preventivi digitali ✅ 2026-05-16

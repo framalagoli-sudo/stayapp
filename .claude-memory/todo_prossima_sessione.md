@@ -1,14 +1,17 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 10/11 SESSIONE CHIUSA: calendario prezzi + offerte fase 2 LIVE (Automax), da spiegare ad Automax + 2 sonde. Prima, dal 01/11: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
+description: "Da dove riprendere — 19/11 SESSIONE CHIUSA: ripartire da DA_FARE.md (spam marcato LIVE dopo migration 147). Prima: 10/11 SESSIONE CHIUSA: calendario prezzi + offerte fase 2 LIVE (Automax), da spiegare ad Automax + 2 sonde. Prima, dal 01/11: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-11-10T07:09:40.134Z
+  modified: 2026-11-19T07:44:20.944Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+⭐ **19/11 — SESSIONE CHIUSA da Francesco** («poi chiudi sessione e quando ripartiamo prendiamo il file appena scritto»). **Ripartire leggendo `DA_FARE.md`** (il «file appena scritto»), poi questo diario.
+Fatto il 18–19/11: esportazione GDPR completa (A1), campo trappola che non scarta più da solo (richiesta Panoramic persa), **spam marcato invece di buttato** (migration 147 eseguita da Francesco il 19/11, pubblicato dopo; linguette «Richieste / Possibile spam» nel pannello moduli). Restano per Francesco: Turnstile sui siti dei clienti (domini nella chiave Cloudflare), riprovare il modulo di www.suitepanoramic.it (scrive al cliente). Prossimo per Ettore in DA_FARE A1: permessi dei collaboratori per entità (aspetta il suo «procedi»), conservazione dati, prova di ripristino.
 
 📋 **Dal 18/11/2026 l'elenco delle cose aperte è `DA_FARE.md`** (radice del repo). Questo file è il diario delle sessioni: le voci aperte qui sotto sono state riportate lì; per sapere cosa resta, leggere quello.
 

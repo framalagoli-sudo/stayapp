@@ -16,7 +16,7 @@ pagarlo**.
 > dentro GitHub, che è uno degli accessi che descrive: se nessuno può entrare in
 > GitHub, nessuno può leggere queste istruzioni. Va tenuta una copia fuori.
 
-*Aggiornato all'11 novembre 2026.*
+*Aggiornato al 19 novembre 2026.*
 
 ---
 
@@ -568,8 +568,9 @@ Chi compra o subentra deve saperlo prima, non dopo.
   30/09/2026 il titolare trova in Dashboard «Inizia qui»: i passi che mancano
   (dati, sito, pubblicazione, dominio, primo contatto), calcolati dai dati veri;
   dal 15/10/2026 chi si registra da solo parte da «Che attività hai?» (scelta fra
-  le nostre categorie). Prima di aprire le registrazioni mancano la verifica
-  dell'email e la protezione anti-robot sul modulo.
+  le nostre categorie). Dal 23/10/2026 l'azienda nasce solo dopo la conferma
+  dell'email, con campo trappola, Turnstile morbido e limiti per indirizzo e per
+  giorno: aprirle è una decisione di Francesco.
 - **Le registrazioni sono chiuse.** Ogni cliente finora è nato da un invito. La
   registrazione automatica funziona ma non è mai stata aperta al pubblico.
 - **Non c'è fatturazione automatica.** Nessun abbonamento ricorrente per i
@@ -599,8 +600,9 @@ Chi compra o subentra deve saperlo prima, non dopo.
   05/10/2026 nessun modulo di prenotazione chiedeva il consenso alle promozioni
   (Garage 22: 67 contatti, zero iscritti). Da quel giorno la casella c'è; i numeri
   cresceranno solo con le prenotazioni nuove.
-- **WhatsApp è costruito ma spento**: la verifica Meta è **approvata** (Tech
-  Provider, 18/09/2026), mancano le chiavi sulla piattaforma e la prova dal vivo.
+- **WhatsApp è costruito ma spento**: verificato il 18/10/2026 in dashboard, la
+  registrazione come Tech Provider **non c'è** (scelta futura: Independent Tech
+  Provider) e l'app Meta non è pubblicata; manca la prova dal vivo coi clienti.
   Il collegamento di un numero oggi è aperto **solo al super_admin**; quando si
   aprirà, solo all'admin dell'azienda, mai allo staff (`lib/whatsapp-pilota.js`).
 - **Molte funzioni costruite non le usa nessuno.** Misurato il 23/09/2026: negozio,
@@ -608,8 +610,11 @@ Chi compra o subentra deve saperlo prima, non dopo.
   25/09/2026 ogni entità ha una **categoria** decisa da OltreNova, e il cliente
   vede solo le funzioni della sua (pagina «Funzioni e profili», solo super_admin;
   `STRATEGIA.md` §6.1). Le funzioni restano nel codice: nascoste, non tolte.
-- **L'esportazione dei dati di un'azienda è incompleta**: copre circa 15 tabelle
-  su 50. Per una richiesta di portabilità (GDPR) oggi non basta.
+- **L'esportazione dei dati di un'azienda è completa dal 18/11/2026** (Aziende →
+  «Esporta dati»): legge tutte le tabelle dallo schema, senza righe di altre
+  aziende e con token e credenziali oscurati. Con un'azienda piena impiega oltre
+  30 secondi (il limite della route è 60): se i dati crescono, va resa a più
+  passaggi.
 - **`oltrenova.com` non ha una casella di posta**: `info@` è un inoltro. Per
   rispondere da quell'indirizzo serve una casella vera (era stato scelto Zoho
   Mail Lite, mai aperto).

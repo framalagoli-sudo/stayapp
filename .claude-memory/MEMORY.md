@@ -9,7 +9,7 @@
 
 ## Da leggere per primi
 - 📋 [Le cose aperte: SOLO DA_FARE.md](feedback_da_fare_unico.md) — leggerlo a ogni avvio, aggiornarlo in ogni commit
-- [TODO prossima sessione](todo_prossima_sessione.md) — LEGGERE PER PRIMO
+- [TODO prossima sessione](todo_prossima_sessione.md) — diario delle sessioni (l'elenco è DA_FARE.md)
 - [Tariffe, minimi e promozioni sulle risorse](project_tariffe_risorse.md) — calendario prezzi + offerte fase 2 LIVE il 10/11; da spiegare ad Automax
 - [Sentinella fornitori](project_sentinella_fornitori.md) — A live dal 01/11 (prove ogni mattina, email solo se guasto); B aspetta la scelta di Francesco (routine cloud consigliata)
 - [Guida del pannello: cambio pagina = aggiorno la scheda](feedback_guida_pannello.md) — lib/guida, verifica-guida blocca il deploy
@@ -21,6 +21,7 @@
 - [L'AI non inventa fatti](feedback_niente_fatti_inventati_ai.md) — recensioni inventate rifiutate
 
 ## Sessioni
+- [17–19/11 Panoramic, colori pannello, export GDPR, spam marcato](project_session_2026_11_17_19.md)
 - [09–10/11 calendario dei prezzi e offerte (Automax)](project_session_2026_11_09_10.md)
 - [31/10–01/11 archivio eventi passati, sentinella A](project_session_2026_10_31_11_01.md)
 - [26/10 annullamento ospite, lista automatica, porte pubbliche](project_session_2026_10_26.md)

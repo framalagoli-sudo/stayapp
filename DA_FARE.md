@@ -40,6 +40,9 @@
 - [ ] Foto in grande anche per il blocco «Immagine» singola e il dettaglio delle vetrine.
 
 ### A4. Difetti piccoli annotati
+- [ ] **Esportazione GDPR lenta**: con l'azienda piena di `probe-enumerazione` ha superato i 30 s
+  (deploy del 19/11; la route ne ha 60, la sonda ora aspetta 65). Con un cliente grande rischia il
+  timeout: renderla a più passaggi o in parallelo.
 - [ ] Su `/en` il pulsante «Torna a…» della pagina evento resta in italiano.
 - [ ] Blog: date con `toLocaleDateString` senza fuso (vicino a mezzanotte, giorno diverso).
 - [ ] «Aggiungi opzione» del chatbot tagliato di 2 px a 360 px.
@@ -105,7 +108,6 @@
 ## C. Servono gli accessi di Francesco
 
 ### C1. Fornitori
-- [ ] **Eseguire la migration 147** (`supabase/migrations/147_form_possibile_spam.sql`) — poi Ettore pubblica lo spam marcato e lancia `probe-campo-trappola.mjs`. ⛔ Il codice è già su main: non va pubblicato prima della migration (ogni invio di modulo fallirebbe).
 - [ ] **Turnstile sui siti dei clienti** — Cloudflare → Turnstile → la chiave del sito: aggiungere i domini dei clienti all'elenco (o valutare con Ettore come gestirli), poi Ettore mette il controllo invisibile anche nel modulo dei siti. Oggi c'è solo sulla pagina `/form`.
 - [ ] **Resend** — accendere Open/Click tracking sul dominio e iscrivere il webhook
   `https://www.oltrenova.com/api/resend-webhook` a `email.delivered`/`opened`/`clicked`. Poi Ettore
@@ -140,6 +142,9 @@
   motori di ricerca»).
 
 ### C4. Da provare dal pannello (costruito, mai provato da Francesco)
+- [ ] Moduli → un modulo → «Risposte»: linguette «Richieste» e «Possibile spam», pulsanti «Segna come
+  spam» / «Non è spam» (pubblicato il 19/11; la sonda l'ha provato da titolare). Le email delle
+  risposte sospette arrivano con «[Possibile spam]» nell'oggetto.
 - [ ] Editor visuale, sezioni condivise, «Riscrivi i testi con l'AI», «Dimmi cosa cambiare» a voce,
   «Modifica sulla pagina» dal telefono, blocchi nuovi, galleria delle sezioni pronte.
 - [ ] Email di conferma evento con la frase del termine e il link «Annulla»; email «Si è liberato un

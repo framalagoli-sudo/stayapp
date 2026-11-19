@@ -30,7 +30,9 @@ async function chiama(path, token, metodo) {
       // Un testo qualunque, perché le porte che scrivono arrivino oltre il
       // «campo obbligatorio» fino al controllo di chi è la cosa.
       ...(metodo === 'GET' ? {} : { body: JSON.stringify({ testo: 'ZZ-B', nome: 'ZZ-B' }) }),
-      signal: AbortSignal.timeout(30000),
+      // L'esportazione GDPR legge tutte le tabelle dell'azienda e ha 60 s
+      // (maxDuration della route): con un'azienda piena supera i 30 s.
+      signal: AbortSignal.timeout(path.startsWith('/api/admin/backup/') ? 65000 : 30000),
     })
     return { status: r.status, corpo: (await r.text().catch(() => '')).slice(0, 600) }
   } catch (e) { return { status: 0, corpo: e.message } }
