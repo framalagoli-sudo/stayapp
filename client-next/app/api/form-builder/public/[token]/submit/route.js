@@ -8,6 +8,7 @@ import { verifyTurnstile } from '@/lib/turnstile'
 import { registraAttivita } from '@/lib/crm'
 import { normalizzaTelefono } from '@/lib/contatti-import'
 import { sembraUnRobot } from '@/lib/campo-trappola'
+import { motiviSpam } from '@/lib/spam-moduli'
 
 // ── Flood detection per-form (max 20 submit / 10 minuti) ─────────────────────
 const formFloodMap = new Map()
@@ -39,21 +40,7 @@ function trackFlood(form) {
   return entry.count >= FLOOD_THRESHOLD
 }
 
-// ── Spam content detection ────────────────────────────────────────────────────
-const SPAM_KEYWORDS = /\b(viagra|cialis|casino|crypto|bitcoin|nft|forex|backlink|seo service|buy followers|make money fast)\b/i
-const SPAM_SCRIPTS  = /[а-яА-Я一-鿿؀-ۿ]/
-
-function isSpamContent(dati, campi) {
-  for (const c of (campi || [])) {
-    if (c.tipo !== 'text' && c.tipo !== 'textarea') continue
-    const val = String(dati[c.id] ?? '')
-    if (!val) continue
-    if (SPAM_KEYWORDS.test(val)) return true
-    if (SPAM_SCRIPTS.test(val)) return true
-    if ((val.match(/https?:\/\//gi) || []).length >= 2) return true
-  }
-  return false
-}
+// ── Spam: si marca, non si butta (lib/spam-moduli.js, migration 147) ────────
 
 // ── Email validation via Abstract API ────────────────────────────────────────
 async function isEmailDeliverable(email) {
@@ -169,10 +156,6 @@ export async function POST(request, { params }) {
     delete rawDati._t
     const dati = sanitizeDati(rawDati, campiIds)
 
-    // 4b. Spam content detection
-    if (isSpamContent(dati, form.campi)) {
-      return NextResponse.json({ ok: true, redirect_url: form.redirect_url || null })
-    }
 
     // 5. Valida campo Consenso GDPR
     const consensoCampo = (form.campi || []).find(c => c.tipo === 'consenso')
@@ -192,6 +175,13 @@ export async function POST(request, { params }) {
       }
     }
 
+    // 6b. Segni dello spam: la risposta si SALVA comunque, marcata, e decide il
+    //     titolare dal pannello. Una sospetta non crea il contatto, non riceve la
+    //     risposta automatica (sennò un robot userebbe i nostri moduli per
+    //     scrivere a indirizzi a caso) e non fa partire webhook.
+    const motivi = motiviSpam(dati, form.campi, { apertoMs: body._t, turnstileRifiutato: Array.isArray(captcha.softfail) })
+    const sospetta = motivi.length > 0
+
     // 7. Crea/trova contatto CRM se presente campo email
     let contattoId = null
     let emailNonValida = false
@@ -205,7 +195,7 @@ export async function POST(request, { params }) {
     const marketingCampo = (form.campi || []).find(c => c.tipo === 'consenso_marketing')
     const marketingConsent = marketingCampo ? !!dati[marketingCampo.id] : false
 
-    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!sospetta && email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       const deliverable = await isEmailDeliverable(email)
       emailNonValida = !deliverable
 
@@ -275,6 +265,8 @@ export async function POST(request, { params }) {
         ip: clientIp,
         consenso_dato: consensoDato,
         consenso_privacy_url: consensoPrivacyUrl,
+        possibile_spam: sospetta,
+        spam_motivo: sospetta ? motivi.join(', ').slice(0, 200) : null,
       })
       .select('id').maybeSingle()
     if (subErr) return NextResponse.json({ error: subErr.message }, { status: 500 })
@@ -305,11 +297,11 @@ export async function POST(request, { params }) {
 
       sendEmail({ _ctx: 'form-notifica',
         to: form.email_notifica,
-        subject: `Nuova risposta: ${escHtml(form.nome)}`,
+        subject: `${sospetta ? '[Possibile spam] ' : ''}Nuova risposta: ${escHtml(form.nome)}`,
         html: emailTemplate({
           title: 'Nuova risposta ricevuta', entityName: 'OltreNova',
           // `righe` e `consentRow` sono già composti con escHtml qui sopra.
-          bodyHtml: html`<p style="color:#888;font-size:13px;margin:0 0 12px">Form: <strong>${form.nome}</strong></p><table style="width:100%;border-collapse:collapse">${htmlGiaPulito(righe + consentRow)}</table>`,
+          bodyHtml: html`${sospetta ? html`<p style="color:#9a5b00;background:#fff7e6;border-radius:8px;padding:10px 12px;font-size:13px;margin:0 0 12px">Sembra spam (${motivi.join(', ')}): l'abbiamo messa in «Possibile spam» fra le risposte del modulo. Se è una persona vera, aprila e premi «Non è spam».</p>` : ''}<p style="color:#888;font-size:13px;margin:0 0 12px">Form: <strong>${form.nome}</strong></p><table style="width:100%;border-collapse:collapse">${htmlGiaPulito(righe + consentRow)}</table>`,
           appUrl: (process.env.CLIENT_URL ?? '').trim() || 'https://oltrenova.com',
         }),
       }).catch(e => console.error('[form-submit] email notifica admin error:', e?.message || e))
@@ -325,7 +317,7 @@ export async function POST(request, { params }) {
     }
 
     // 11. Autoresponder email all'utente
-    if (form.email_conferma_attiva && email && !emailNonValida && process.env.RESEND_API_KEY) {
+    if (!sospetta && form.email_conferma_attiva && email && !emailNonValida && process.env.RESEND_API_KEY) {
       const vars = { nome: nome || email, form_nome: form.nome }
       const oggetto = applyTemplate(
         form.email_conferma_oggetto || `Abbiamo ricevuto il tuo messaggio — ${form.nome}`,
@@ -355,8 +347,8 @@ export async function POST(request, { params }) {
       }).catch(e => console.error('[form-submit] autoresponder email error:', e?.message || e))
     }
 
-    // 12. Webhook form_submit (Zapier / Make / n8n)
-    sendWebhooks(form.azienda_id, 'form_submit', {
+    // 12. Webhook form_submit (Zapier / Make / n8n) — non per le sospette
+    if (!sospetta) sendWebhooks(form.azienda_id, 'form_submit', {
       form_id: form.id,
       form_nome: escHtml(form.nome),
       contatto_id: contattoId || null,

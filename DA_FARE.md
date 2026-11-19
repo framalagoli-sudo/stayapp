@@ -1,6 +1,6 @@
 # Da fare — l'elenco unico delle cose aperte
 
-> **Aggiornato il 18/11/2026.**
+> **Aggiornato il 19/11/2026.**
 >
 > È l'**unico** posto delle cose aperte di OltreNova (decisione di Francesco, 18/11/2026:
 > «ogni avvio e per ogni aggiornamento lo teniamo bello fresco, sennò ci intoppiamo»).
@@ -105,6 +105,8 @@
 ## C. Servono gli accessi di Francesco
 
 ### C1. Fornitori
+- [ ] **Eseguire la migration 147** (`supabase/migrations/147_form_possibile_spam.sql`) — poi Ettore pubblica lo spam marcato e lancia `probe-campo-trappola.mjs`. ⛔ Il codice è già su main: non va pubblicato prima della migration (ogni invio di modulo fallirebbe).
+- [ ] **Turnstile sui siti dei clienti** — Cloudflare → Turnstile → la chiave del sito: aggiungere i domini dei clienti all'elenco (o valutare con Ettore come gestirli), poi Ettore mette il controllo invisibile anche nel modulo dei siti. Oggi c'è solo sulla pagina `/form`.
 - [ ] **Resend** — accendere Open/Click tracking sul dominio e iscrivere il webhook
   `https://www.oltrenova.com/api/resend-webhook` a `email.delivered`/`opened`/`clicked`. Poi Ettore
   rilancia `probe-newsletter-statistiche.mjs --vivo` e la sentinella in Diagnostica.
