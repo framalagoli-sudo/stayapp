@@ -109,9 +109,13 @@
 
 ### C1. Fornitori
 - [ ] **Turnstile sui siti dei clienti** — Cloudflare → Turnstile → la chiave del sito: aggiungere i domini dei clienti all'elenco (o valutare con Ettore come gestirli), poi Ettore mette il controllo invisibile anche nel modulo dei siti. Oggi c'è solo sulla pagina `/form`.
-- [ ] **Resend** — accendere Open/Click tracking sul dominio e iscrivere il webhook
-  `https://www.oltrenova.com/api/resend-webhook` a `email.delivered`/`opened`/`clicked`. Poi Ettore
-  rilancia `probe-newsletter-statistiche.mjs --vivo` e la sentinella in Diagnostica.
+- [~] **Resend** — ✅ 20/11 webhook iscritto a `email.delivered`/`opened`/`clicked` (oltre a bounced/complained):
+  la sentinella lanciata da Diagnostica ha acceso il battito `consegna-posta`, le consegne arrivano.
+  Resta **Open/Click tracking sul dominio**, da decidere con **Resend Forge** (nuovo motore di invio
+  proposto da Resend): secondo fonti di terzi Forge non supporta ancora aperture e clic, e il passaggio
+  sostituisce MX/SPF su `send` con dei CNAME. Prima Ettore verifica se newsletter ed email di servizio
+  partono dallo stesso dominio (Resend sconsiglia il tracciamento aperture sul dominio transazionale).
+  Prova vera: la prossima newsletter di Garage 22 deve mostrare le consegnate.
 - [ ] **Resoconti per email** — Impostazioni → «Mandala a me» (mai visto in una casella), poi decidere
   se accenderli.
 - [ ] **Meta/WhatsApp** (in pausa dal 23/10) — si riparte dalla config del webhook in dashboard, poi
