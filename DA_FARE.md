@@ -1,6 +1,6 @@
 # Da fare — l'elenco unico delle cose aperte
 
-> **Aggiornato il 19/11/2026.**
+> **Aggiornato il 20/11/2026.**
 >
 > È l'**unico** posto delle cose aperte di OltreNova (decisione di Francesco, 18/11/2026:
 > «ogni avvio e per ogni aggiornamento lo teniamo bello fresco, sennò ci intoppiamo»).
@@ -63,6 +63,11 @@
   sandbox con un conto attivo (→ C).
 
 ### A6. Lavori grandi già decisi, in coda
+- [ ] **Posta con fornitore sostituibile** (deciso il 20/11) — `lib/posta/` con Resend e Amazon SES
+  sotto; newsletter su SES a consumo, posta di servizio su Resend gratis; tetto newsletter per
+  azienda, freno sui rimbalzi, allarme sul totale. Nasce dal tetto di 100 email/giorno superato il
+  19/11 da due newsletter di Garage 22, che ferma **tutta** la posta di **tutti**. Parte quando
+  Francesco crea l'account AWS (→ C1). Piano in `POSTA.md`.
 - [ ] **Operazioni del dominio in `lib/`** (crea evento, cambia orari, pubblica pagina…) usate da
   pannello e futuro assistente AI. (roadmap in `CLAUDE.md`)
 - [ ] **Campagne WhatsApp per lista** come le newsletter, e via i tag col titolo dell'evento — quando
@@ -111,11 +116,13 @@
 - [ ] **Turnstile sui siti dei clienti** — Cloudflare → Turnstile → la chiave del sito: aggiungere i domini dei clienti all'elenco (o valutare con Ettore come gestirli), poi Ettore mette il controllo invisibile anche nel modulo dei siti. Oggi c'è solo sulla pagina `/form`.
 - [~] **Resend** — ✅ 20/11 webhook iscritto a `email.delivered`/`opened`/`clicked` (oltre a bounced/complained):
   la sentinella lanciata da Diagnostica ha acceso il battito `consegna-posta`, le consegne arrivano.
-  Resta **Open/Click tracking sul dominio**, da decidere con **Resend Forge** (nuovo motore di invio
-  proposto da Resend): secondo fonti di terzi Forge non supporta ancora aperture e clic, e il passaggio
-  sostituisce MX/SPF su `send` con dei CNAME. Prima Ettore verifica se newsletter ed email di servizio
-  partono dallo stesso dominio (Resend sconsiglia il tracciamento aperture sul dominio transazionale).
+  Aperture e clic **non** si accendono su Resend: le newsletter passano ad Amazon SES (`POSTA.md`).
+  L'avviso su **Resend Forge** si ignora (il passaggio sostituisce MX/SPF su `send`).
   Prova vera: la prossima newsletter di Garage 22 deve mostrare le consegnate.
+- [ ] **Account AWS** — crearlo con la carta (Ettore guida), poi richiesta di uscita dalla sandbox di
+  SES (la scrive Ettore). Sblocca la voce «Posta con fornitore sostituibile» (→ A6, `POSTA.md`).
+- [ ] **Garage 22** — chiedere al massimo **una newsletter al giorno** finché le newsletter sono su
+  Resend gratis (tetto 100/giorno per tutta la piattaforma).
 - [ ] **Resoconti per email** — Impostazioni → «Mandala a me» (mai visto in una casella), poi decidere
   se accenderli.
 - [ ] **Meta/WhatsApp** (in pausa dal 23/10) — si riparte dalla config del webhook in dashboard, poi

@@ -11,6 +11,7 @@
 - 📋 [Le cose aperte: SOLO DA_FARE.md](feedback_da_fare_unico.md) — leggerlo a ogni avvio, aggiornarlo in ogni commit
 - [TODO prossima sessione](todo_prossima_sessione.md) — diario delle sessioni (l'elenco è DA_FARE.md)
 - [Tariffe, minimi e promozioni sulle risorse](project_tariffe_risorse.md) — calendario prezzi + offerte fase 2 LIVE il 10/11; da spiegare ad Automax
+- [Posta: fornitore sostituibile](project_posta_fornitore_sostituibile.md) — 20/11: newsletter su SES, servizio su Resend gratis; aspetta account AWS
 - [Sentinella fornitori](project_sentinella_fornitori.md) — A live dal 01/11 (prove ogni mattina, email solo se guasto); B aspetta la scelta di Francesco (routine cloud consigliata)
 - [Guida del pannello: cambio pagina = aggiorno la scheda](feedback_guida_pannello.md) — lib/guida, verifica-guida blocca il deploy
 - [A ogni chiusura: aggiornare TUTTI i file di progetto](feedback_chiusura_sessione.md) — aprirli, non supporli

@@ -17,6 +17,7 @@ Azienda (top-level)
 > Si legge **a ogni avvio di sessione** e si aggiorna **nello stesso commit** di ogni lavoro che
 > chiude o apre qualcosa. Un elenco sparso fra documenti e memoria ne dimentica metà — è successo.
 
+> **✉️ Posta in uscita (piano del 20/11/2026, non ancora implementato)** → `POSTA.md` — interfaccia unica in `lib/posta/`, Resend e Amazon SES sotto; newsletter su SES, servizio su Resend gratis. Il piano gratuito di Resend ha **un tetto di 100 email/giorno per tutta la piattaforma**: una newsletter grande ferma conferme e avvisi di tutti.
 > **🌐 Registrazione domini (piano, non ancora implementato)** → `REGISTRAR.md` — il fornitore dev'essere sostituibile: interfaccia unica in `lib/registrar/`, implementazioni sotto. Né Cloudflare né Vercel vendono `.it`.
 ## ⛔ Prima di scrivere qualsiasi codice
 
