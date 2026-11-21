@@ -133,9 +133,21 @@ reimpostazione password.
 **Se cade**: il servizio funziona ma nessuno riceve più niente. È un guasto
 **silenzioso**: nessuno se ne accorge finché un cliente non si lamenta.
 
-**Piano e costo**: **gratuito** al volume attuale.
+**Piano e costo**: **gratuito**. ⚠️ Il piano gratuito ha **un tetto di 100 email al
+giorno per tutta la piattaforma**, e quando è pieno si ferma **tutta** la posta di
+**tutti** i clienti, comprese conferme e link di pagamento. È stato raggiunto il
+19/11/2026 da due newsletter di un solo cliente (108 destinatari). Il rimedio deciso
+il 20/11 è in `POSTA.md`: newsletter su Amazon SES a consumo, posta di servizio su
+Resend gratis, dietro un'interfaccia che permette di cambiare fornitore con
+un'impostazione. Fino ad allora: al massimo una newsletter al giorno.
 
 **Dominio verificato**: `oltrenova.com`, con DMARC in quarantena.
+
+**Webhook**: `https://www.oltrenova.com/api/resend-webhook`, iscritto dal 20/11/2026
+a rimbalzi, reclami, consegne, aperture e clic. Le aperture e i clic restano a zero
+perché il tracciamento sul dominio non è acceso (di proposito: vedi `POSTA.md`).
+Resend propone di passare il dominio al suo nuovo motore «Forge»: non farlo senza
+un piano, perché sostituisce i record `send` da cui parte tutta la posta.
 
 ⚠️ **Gli indirizzi dei webhook vanno registrati su `www.oltrenova.com`, mai
 sull'apex.** L'apex risponde con un redirect, e per chi consegna i webhook un

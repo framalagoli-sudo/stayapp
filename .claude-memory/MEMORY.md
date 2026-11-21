@@ -22,6 +22,7 @@
 - [L'AI non inventa fatti](feedback_niente_fatti_inventati_ai.md) — recensioni inventate rifiutate
 
 ## Sessioni
+- [20/11 webhook Resend, tetto 100/giorno, piano POSTA.md](project_session_2026_11_20.md)
 - [17–19/11 Panoramic, colori pannello, export GDPR, spam marcato](project_session_2026_11_17_19.md)
 - [09–10/11 calendario dei prezzi e offerte (Automax)](project_session_2026_11_09_10.md)
 - [31/10–01/11 archivio eventi passati, sentinella A](project_session_2026_10_31_11_01.md)

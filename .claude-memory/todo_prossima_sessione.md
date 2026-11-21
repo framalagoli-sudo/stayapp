@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 19/11 SESSIONE CHIUSA: ripartire da DA_FARE.md (spam marcato LIVE dopo migration 147). Prima: 10/11 SESSIONE CHIUSA: calendario prezzi + offerte fase 2 LIVE (Automax), da spiegare ad Automax + 2 sonde. Prima, dal 01/11: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
+description: "Da dove riprendere — 20/11 SESSIONE CHIUSA: ripartire da DA_FARE.md; posta → POSTA.md, aspetta account AWS di Francesco. Prima: 19/11 SESSIONE CHIUSA: ripartire da DA_FARE.md (spam marcato LIVE dopo migration 147). Prima: 10/11 SESSIONE CHIUSA: calendario prezzi + offerte fase 2 LIVE (Automax), da spiegare ad Automax + 2 sonde. Prima, dal 01/11: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
 metadata: 
   node_type: memory
   type: project
@@ -9,6 +9,8 @@ metadata:
 ---
 
 # Si riprende da qui
+
+⭐ **20/11 — SESSIONE CHIUSA da Francesco.** Nessun codice: webhook Resend iscritto a delivered/opened/clicked e provato (battito `consegna-posta` acceso); tetto Resend gratis 100/giorno superato il 19/11 da Garage 22 → piano **`POSTA.md`** (lib/posta/, newsletter su SES, servizio su Resend gratis, tetto per azienda). **Ripartire così:** leggere `DA_FARE.md`; se Francesco ha creato l account AWS si parte con POSTA.md (guidarlo, poi utente IAM solo invio); verificare che la prossima newsletter di Garage 22 abbia le «consegnate»; ricordargli il messaggio a Garage 22 (una newsletter al giorno). Resoconto → [[project_session_2026_11_20]].
 
 ⭐ **19/11 — SESSIONE CHIUSA da Francesco** («poi chiudi sessione e quando ripartiamo prendiamo il file appena scritto»). **Ripartire leggendo `DA_FARE.md`** (il «file appena scritto»), poi questo diario.
 Fatto il 18–19/11: esportazione GDPR completa (A1), campo trappola che non scarta più da solo (richiesta Panoramic persa), **spam marcato invece di buttato** (migration 147 eseguita da Francesco il 19/11, pubblicato dopo; linguette «Richieste / Possibile spam» nel pannello moduli). Restano per Francesco: Turnstile sui siti dei clienti (domini nella chiave Cloudflare), riprovare il modulo di www.suitepanoramic.it (scrive al cliente). Prossimo per Ettore in DA_FARE A1: permessi dei collaboratori per entità (aspetta il suo «procedi»), conservazione dati, prova di ripristino.
