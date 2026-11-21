@@ -53,6 +53,18 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
   const navBorderColor = navDark ? 'rgba(255,255,255,0.08)' : '#eee'
   const navTextColor   = navDark ? 'rgba(255,255,255,0.8)'  : '#1a1a2e'
   const base           = entityBasePath(prefix, entity.slug, domain, lang)
+  // Colore dei segni della barra a pillola (pagina corrente): il secondo colore
+  // del sito se c'è, altrimenti il principale. Mai una stringa che non sia un esadecimale.
+  const accento        = [secondary, primary].find(c => /^#[0-9a-fA-F]{6}$/.test(c || '')) || '#ffffff'
+
+  // Un pulsante che porta a una pagina del sito (`/a/slug/p/contatti`, com'è
+  // salvato dal selettore delle pagine) va adattato al dominio del cliente e
+  // alla lingua, come fanno i blocchi (`siteHref` nel disegnatore): in inglese
+  // portava alla pagina italiana. Il resto passa da `safeUrl`.
+  const vaiA = (u) => {
+    const m = typeof u === 'string' && u.match(/^(?:\/en)?\/(?:s|r|a)\/[^/?#]+(.*)$/)
+    return m ? ((base + m[1]) || '/') : safeUrl(u)
+  }
 
   const [navVisible, setNavVisible] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -93,7 +105,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
       <div key={p.id} className="snav-item" style={{ position: 'relative' }}
         onMouseEnter={() => subs.length && setOpenDropdown(p.id)}
         onMouseLeave={() => setOpenDropdown(null)}>
-        <a href={`${base}/p/${p.slug}`} className="snav-link"
+        <a href={`${base}/p/${p.slug}`} className={currentSlug && p.slug === currentSlug ? 'snav-link snav-attiva' : 'snav-link'}
           style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap', fontWeight: currentSlug && p.slug === currentSlug ? 700 : 400 }}>
           {p.titolo}{subs.length > 0 && <span style={{ marginLeft: 4, opacity: 0.5 }}>▾</span>}
         </a>
@@ -118,7 +130,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
       {pwa && <a href={pwa.url} style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 600, textDecoration: 'none', color: navTextColor, border: `1px solid ${navDark ? 'rgba(255,255,255,0.3)' : '#ddd'}`, whiteSpace: 'nowrap' }}>{pwa.label}</a>}
       {bookingUrl && <a href={safeUrl(bookingUrl)} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 20px', borderRadius: 50, fontSize: 13, fontWeight: 700, textDecoration: 'none', color: readableOn('#ffffff', primary, '#1a1a2e'), background: primary, whiteSpace: 'nowrap' }}>Prenota</a>}
       {buttons.filter(b => !perDesktop || !vociTesto.includes(b)).map(b => (
-        <a key={b.id} href={safeUrl(b.url)} target={String(b.url).startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
+        <a key={b.id} href={vaiA(b.url)} target={String(b.url).startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
           style={buttonStyle(b, { primary, secondary })}
           onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
           onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}>
@@ -133,7 +145,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
     <div className={`snav-desktop snav-h-${hover}`} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, minWidth: 0 }}>
       {topPages.map(menuLink)}
       {vociTesto.map(b => (
-        <a key={b.id} href={safeUrl(b.url)} className="snav-link" target={String(b.url).startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
+        <a key={b.id} href={vaiA(b.url)} className="snav-link" target={String(b.url).startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer"
           style={{ color: navTextColor, textDecoration: 'none', fontSize: 13, padding: '6px 12px', borderRadius: 6, display: 'block', whiteSpace: 'nowrap' }}>{b.label}</a>
       ))}
     </div>
@@ -155,14 +167,7 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
     <>
       <style>{`
         .snav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: ${navBg}; backdrop-filter: blur(14px); border-bottom: 1px solid ${navBorderColor}; padding: 0 32px; transform: translateY(${navVisible ? '0' : '-100%'}); transition: transform 0.3s ease; }
-        ${pillola ? `
-        .snav { top: 14px; left: 50%; right: auto; width: min(1100px, calc(100% - 28px)); transform: translateX(-50%) translateY(${navVisible ? '0' : '-140%'});
-                border: 1px solid ${navBorderColor}; border-radius: 999px; padding: 0 22px; backdrop-filter: blur(18px) saturate(1.4);
-                box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
-        @media (max-width: 768px) { .snav { top: 8px; width: calc(100% - 16px); border-radius: 22px; padding: 0 14px; } }
-        .snav-mobile { top: 78px; left: 12px; right: 12px; border-radius: 18px; border: 1px solid ${navBorderColor}; }
-        ` : ''}
-        .snav-classic  { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+        .snav-classic { display: flex; align-items: center; justify-content: space-between; height: 64px; }
         .snav-centered { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 64px; gap: 12px; }
         .snav-stacked  { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 10px; padding-bottom: 10px; }
         .snav-stacked-top { display: flex; align-items: center; justify-content: center; width: 100%; position: relative; }
@@ -194,6 +199,25 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
           .snav-desktop { display: none !important; }
           .snav-burger { display: flex !important; align-items: center; }
         }
+        ${pillola ? `
+        /* La barra a pillola sta DOPO le regole generiche: prima stava sopra, e
+           la regola generica della tendina (a tutta larghezza, top 64px) vinceva
+           — la tendina usciva dai bordi della barra e ci finiva sotto. */
+        .snav { top: 14px; left: 50%; right: auto; width: min(1100px, calc(100% - 28px)); transform: translateX(-50%) translateY(${navVisible ? '0' : '-140%'});
+                border: 1px solid ${navBorderColor}; border-radius: 999px; padding: 0 22px; backdrop-filter: blur(18px) saturate(1.4);
+                box-shadow: 0 10px 30px rgba(0,0,0,0.18); }
+        .snav .snav-link.snav-attiva::after { content: ''; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; border-radius: 2px; background: ${accento}; transform: none; }
+        .snav-mobile { top: 80px; left: 8px; right: 8px; border-radius: 22px; border: 1px solid ${navBorderColor}; padding: 8px 18px 18px; box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+        .snav-mobile .snav-voce { font-size: 17px !important; padding: 15px 2px !important; }
+        .snav-mobile .snav-voce:last-of-type { border-bottom: none !important; }
+        .snav-mobile .snav-voce-attiva { color: ${accento} !important; font-weight: 600; }
+        .snav-mobile .snav-azioni { margin-top: 10px !important; }
+        .snav-mobile .snav-azioni a { flex: 1 1 100%; justify-content: center; padding: 14px 20px !important; font-size: 15px !important; }
+        @media (max-width: 768px) {
+          .snav { top: 8px; width: calc(100% - 16px); border-radius: 22px; padding: 0 14px; }
+          .snav img[alt="logo"] { height: 34px !important; }
+        }
+        ` : ''}
       `}</style>
 
       {layout === 'centered' ? (
@@ -226,10 +250,11 @@ export default function SiteNav({ entity, mini, pagine = [], prefix, primary, se
         <div className="snav-mobile">
           {topPages.map(p => (
             <a key={p.id} href={`${base}/p/${p.slug}`} onClick={() => setMobileOpen(false)}
+              className={currentSlug && p.slug === currentSlug ? 'snav-voce snav-voce-attiva' : 'snav-voce'}
               style={{ color: navTextColor, textDecoration: 'none', fontSize: 15, padding: '11px 4px', borderBottom: `1px solid ${navBorderColor}` }}>{p.titolo}</a>
           ))}
           {hasActions && (
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>{actions()}</div>
+            <div className="snav-azioni" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>{actions()}</div>
           )}
         </div>
       )}
