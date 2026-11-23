@@ -5,6 +5,8 @@ import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { ritiraLink } from '@/lib/link-pagamento'
 import { occupaPosto } from '@/lib/gruppi-prenotazioni-evento'
 import { muoviListaAttesa } from '@/lib/lista-attesa-automatica'
+import { haOpzioni, leggiScelte, rifiutoScelte, contoScelte, occupatiPerOpzione, scelteDi } from '@/lib/opzioni-evento'
+import { contoEvento } from '@/lib/evento-prenotazione'
 
 export async function PATCH(request, props) {
   const params = await props.params;
@@ -23,7 +25,24 @@ export async function PATCH(request, props) {
         return Response.json({ error: 'Prenotazione non trovata' }, { status: 404 })
     }
 
-    const { status, notes, seats, guest_name, guest_email, guest_phone } = await request.json()
+    const corpo = await request.json()
+    const { status, notes, seats, guest_name, guest_email, guest_phone } = corpo
+
+    // Con le opzioni (migration 148) i posti si contano opzione per opzione, e
+    // si cambiano con le quantità di ognuna (`scelte`), mai con un numero solo.
+    const { data: evOpz } = await supabaseAdmin.from('eventi')
+      .select('price, packages, acconto_percentuale').eq('id', booking.event_id).single()
+    const conOpzioni = haOpzioni(evOpz)
+    if (conOpzioni && seats !== undefined && corpo.scelte === undefined)
+      return Response.json({ error: 'Questo evento ha più opzioni: cambia le quantità di ognuna.' }, { status: 400 })
+    // Quanti posti occupano le ALTRE prenotazioni, opzione per opzione: è lo
+    // spazio che resta a questa. Il tetto è quello del titolare (posti per il
+    // telefono compresi: sono suoi).
+    const occupatiAltri = async () => {
+      const { data: tutte } = await supabaseAdmin.from('event_bookings')
+        .select('id, seats, status, offerta_scade_il, scelte, package_id').eq('event_id', booking.event_id)
+      return occupatiPerOpzione((tutte || []).filter(b => b.id !== params.bookingId))
+    }
 
     // ⚠️ Lo stato arriva dal client e finiva nella colonna così com'era: una
     // stringa inventata creava una prenotazione fantasma — nessun riquadro la
@@ -86,12 +105,25 @@ export async function PATCH(request, props) {
     const daListaAttesa = status === 'confirmed'
     if (daListaAttesa) {
       const { data: prima } = await supabaseAdmin.from('event_bookings')
-        .select('status, seats, offerta_scade_il').eq('id', params.bookingId).maybeSingle()
+        .select('status, seats, offerta_scade_il, scelte, package_id').eq('id', params.bookingId).maybeSingle()
+      // Con le opzioni: c'è posto in OGNUNA delle opzioni che chiede?
+      if (prima && !occupaPosto(prima) && conOpzioni && corpo.scelte === undefined) {
+        const pieno = rifiutoScelte(evOpz, scelteDi(prima), await occupatiAltri(), { canale: 'titolare' })
+        if (pieno) return Response.json({ error: `Non c'è spazio: ${pieno.error}` }, { status: 400 })
+      }
+      // ⛔ In lista si entra con totale 0 (non si è comprato niente): confermata
+      // dal titolare restava a 0 €, e il pannello non diceva quanto incassare.
+      // Il totale si calcola adesso, sul listino di adesso.
+      if (prima?.status === 'waitlist' && corpo.scelte === undefined) {
+        const letto = conOpzioni ? leggiScelte(evOpz, scelteDi(prima).map(s => ({ id: s.id, quantita: Number(s.quantita) || 1 }))) : null
+        if (letto && !letto.errore) { payload.scelte = letto.scelte; payload.total_amount = contoScelte(letto.scelte).totale }
+        else if (!conOpzioni) payload.total_amount = contoEvento(evOpz, prima.package_id, prima.seats || 1).totale
+      }
       // Vale anche per chi era stata annullata e viene ripristinata: nemmeno lei
       // occupava un posto, e rimetterla su un evento pieno lo manderebbe oltre
       // la capienza senza dirlo a nessuno. Chi ha già un posto offerto lo
       // occupa: confermarlo non ne chiede uno in più.
-      if (prima && !occupaPosto(prima)) {
+      if (prima && !occupaPosto(prima) && !conOpzioni) {
         const { data: ev } = await supabaseAdmin.from('eventi')
           .select('seats_total, seats_booked').eq('id', booking.event_id).maybeSingle()
         if (ev?.seats_total && (ev.seats_booked || 0) + (prima.seats || 1) > ev.seats_total) {
@@ -102,9 +134,28 @@ export async function PATCH(request, props) {
       }
     }
 
+    // Le quantità per opzione: prezzi riletti dal listino, posti controllati
+    // opzione per opzione se la prenotazione occupa (o occuperà) un posto.
+    if (conOpzioni && corpo.scelte !== undefined) {
+      const letto = leggiScelte(evOpz, corpo.scelte)
+      if (letto.errore) return Response.json({ error: letto.errore }, { status: 400 })
+      const { data: prima } = await supabaseAdmin.from('event_bookings')
+        .select('status, offerta_scade_il').eq('id', params.bookingId).single()
+      const occupera = occupaPosto({ status: status ?? prima?.status, offerta_scade_il: status !== undefined ? null : prima?.offerta_scade_il })
+      if (occupera) {
+        const pieno = rifiutoScelte(evOpz, letto.scelte, await occupatiAltri(), { canale: 'titolare' })
+        if (pieno) return Response.json({ error: `Non c'è spazio: ${pieno.error}` }, { status: 400 })
+      }
+      payload.scelte = letto.scelte
+      payload.package_id = letto.scelte.length === 1 ? letto.scelte[0].id : null
+      payload.seats = letto.posti
+      payload.total_amount = contoScelte(letto.scelte).totale
+      postiNuovi = letto.posti
+    }
+
     // Cambiare i posti tocca la capienza e il totale: entrambi si rileggono
     // dal database, mai da quello che arriva nella richiesta.
-    if (postiNuovi !== null) {
+    if (postiNuovi !== null && !conOpzioni) {
       const { data: prima } = await supabaseAdmin.from('event_bookings')
         .select('seats, status, package_id, offerta_scade_il').eq('id', params.bookingId).single()
       const { data: ev } = await supabaseAdmin.from('eventi')

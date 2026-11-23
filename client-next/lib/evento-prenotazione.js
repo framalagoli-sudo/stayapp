@@ -1,6 +1,7 @@
 import { accontoDovuto } from './checkout'
 import { eventoConcluso } from './evento-concluso'
 import { postiEvento } from './posti-evento'
+import { haOpzioni, leggiScelte, rifiutoScelte, contoScelte } from './opzioni-evento'
 
 // Le domande che si fanno a un evento quando qualcuno chiede dei posti:
 // quanti ne vuole, si può, quanto costa. Le fanno in due — il riepilogo che si
@@ -49,6 +50,34 @@ export function rifiutoPrenotazione(evento, richiesti) {
 
 // Quanto costa e quanto si paga adesso. Il prezzo è quello dell'evento riletto
 // dal database, o del pacchetto scelto: mai una cifra arrivata nella richiesta.
+// La richiesta intera, con o senza opzioni: quanti posti, si può, quanto costa.
+// Torna { posti, scelte, totale, conto, righe } oppure { rifiuto }.
+//
+// Con le opzioni (migration 148) dal browser arrivano solo `[{ id, quantita }]`:
+// prezzi e quote si rileggono dal listino, e i posti si controllano opzione per
+// opzione sui conteggi salvati (`opzioni_prenotate`). La corsa fra due richieste
+// simultanee la arbitra poi `confermaPostiOpzioni`, dopo l'inserimento.
+// `righe` = le voci della cassa di Stripe (null senza opzioni: una voce sola).
+export function richiestaEvento(evento, { seats, scelte, package_id } = {}) {
+  if (haOpzioni(evento)) {
+    // Concluso o chiuso vale per tutto l'evento; i posti li contano le opzioni.
+    const chiuso = rifiutoPrenotazione({ ...evento, seats_total: 0 }, 1)
+    if (chiuso) return { rifiuto: chiuso }
+    const letto = leggiScelte(evento, scelte)
+    if (letto.errore) return { rifiuto: { error: letto.errore } }
+    const pieno = rifiutoScelte(evento, letto.scelte, evento.opzioni_prenotate || {})
+    if (pieno) return { rifiuto: { ...pieno, lista_attesa: !!evento.lista_attesa } }
+    const { totale, conto, righe } = contoScelte(letto.scelte)
+    return { posti: letto.posti, scelte: letto.scelte, totale, conto, righe }
+  }
+  const posti = postiRichiesti(seats)
+  if (!posti) return { rifiuto: { error: 'Indica per quante persone vuoi prenotare.' } }
+  const rifiuto = rifiutoPrenotazione(evento, posti)
+  if (rifiuto) return { rifiuto }
+  const { totale, conto } = contoEvento(evento, typeof package_id === 'string' ? package_id : null, posti)
+  return { posti, scelte: null, totale, conto, righe: null }
+}
+
 export function contoEvento(evento, packageId, posti) {
   let prezzo = evento.price || 0
   if (packageId) {

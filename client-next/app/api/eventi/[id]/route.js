@@ -4,6 +4,8 @@ import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 import { slugEvento, slugLibero } from '@/lib/evento-indirizzo'
 import { annullamentoPulito } from '@/lib/annullamento-regole'
 import { muoviListaAttesa } from '@/lib/lista-attesa-automatica'
+import { preparaOpzioni } from '@/lib/opzioni-salvataggio'
+import { recomputeEventSeats } from '@/lib/event-seats'
 
 // I tre modi in cui un evento può dire quanto costa (migration 123):
 // «gratuito», una cifra, o una frase scritta dal cliente. Niente = non si scrive.
@@ -95,9 +97,18 @@ export async function PATCH(request, props) {
       }
     }
 
+    // Le opzioni (migration 148): pulite, e i posti dell'evento calcolati da loro.
+    const opzioni = await preparaOpzioni(params.id, payload)
+    if (opzioni.errore) return Response.json({ error: opzioni.errore }, { status: 409 })
+
     payload.updated_at = new Date().toISOString()
     const { data, error } = await supabaseAdmin.from('eventi').update(payload).eq('id', params.id).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+    if ('packages' in payload) {
+      await opzioni.dopo()
+      // I posti per opzione si ricontano subito: le pagine pubbliche li leggono.
+      await recomputeEventSeats(params.id)
+    }
     // Più posti, prenotazioni riaperte, lista automatica appena accesa: se c'è
     // posto, chi aspetta lo riceve adesso e non al prossimo giro.
     await muoviListaAttesa(params.id)

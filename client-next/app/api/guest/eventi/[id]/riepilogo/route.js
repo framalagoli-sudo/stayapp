@@ -1,7 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { puoIncassare } from '@/lib/checkout'
 import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
-import { postiRichiesti, rifiutoPrenotazione, contoEvento } from '@/lib/evento-prenotazione'
+import { richiestaEvento } from '@/lib/evento-prenotazione'
 import { MINUTI_PER_PAGARE } from '@/lib/prenotazioni-scadute'
 
 export const dynamic = 'force-dynamic'
@@ -26,27 +26,27 @@ export async function POST(request, props) {
     const rl = await rateLimit(request, { name: 'evento-riepilogo', limit: 60, windowSec: 3600, ip: getClientIp(request) })
     if (!rl.allowed) return tooManyRequests()
 
-    const { package_id, seats } = await request.json()
+    const corpo = await request.json()
 
     // Solo le colonne che servono ai conti, e nessuna torna indietro.
     const { data: evento, error } = await supabaseAdmin.from('eventi')
-      .select('id, azienda_id, price, packages, acconto_percentuale, date_start, date_end, seats_total, seats_booked, posti_riservati, prenotazioni_chiuse, prenotazioni_chiuse_testo, lista_attesa')
+      .select('id, azienda_id, price, packages, opzioni_prenotate, acconto_percentuale, date_start, date_end, seats_total, seats_booked, posti_riservati, prenotazioni_chiuse, prenotazioni_chiuse_testo, lista_attesa')
       .eq('id', params.id).eq('published', true).eq('active', true).maybeSingle()
     if (error || !evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
-    const posti = postiRichiesti(seats)
-    if (!posti) return Response.json({ error: 'Indica per quante persone vuoi prenotare.' }, { status: 400 })
-    const rifiuto = rifiutoPrenotazione(evento, posti)
-    if (rifiuto) return Response.json(rifiuto, { status: 400 })
-
-    const { totale, conto } = contoEvento(evento, typeof package_id === 'string' ? package_id : null, posti)
+    // La stessa domanda della prenotazione, con la stessa funzione.
+    const richiesta = richiestaEvento(evento, { seats: corpo.seats, scelte: corpo.scelte, package_id: corpo.package_id })
+    if (richiesta.rifiuto) return Response.json(richiesta.rifiuto, { status: 400 })
+    const { posti, scelte, totale, conto } = richiesta
+    // Cosa si sta prenotando, da rileggere: nome, quantità, prezzo. Niente quote.
+    const voci = scelte ? scelte.map(s => ({ nome: s.nome, quantita: s.quantita, prezzo: s.prezzo })) : null
     // Senza un conto collegato la cassa non si apre e si paga sul posto: dire
     // «andrai al pagamento» sarebbe una promessa che la prenotazione non mantiene.
     if (!(conto.dovuto > 0) || !(await puoIncassare(evento.azienda_id))) {
-      return Response.json({ posti, da_pagare: 0 })
+      return Response.json({ posti, totale, voci, da_pagare: 0 })
     }
     return Response.json({
-      posti, totale, da_pagare: conto.dovuto, saldo: conto.saldo,
+      posti, totale, voci, da_pagare: conto.dovuto, saldo: conto.saldo,
       tutto: conto.tutto, perc: conto.perc, minuti: MINUTI_PER_PAGARE,
     })
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }

@@ -7,6 +7,7 @@ import { oraLocale } from './fuso'
 import { hostUfficiale } from './indirizzo-ufficiale'
 import { termineAnnullamento, fraseAnnullamento, entroIlTermine } from './annullamento-regole'
 import { baseLink } from './evento-titolare'
+import { riassuntoScelte } from './opzioni-evento'
 
 // «La tua prenotazione è confermata»: **una sola volta, nel momento giusto.**
 //
@@ -37,7 +38,7 @@ function quando(iso, fuso) {
 export async function mandaConfermaEvento(bookingId) {
   try {
     const { data: b } = await supabaseAdmin.from('event_bookings')
-      .select('id, event_id, guest_name, guest_email, guest_phone, seats, total_amount, package_id, conferma_inviata_il, annulla_token')
+      .select('id, event_id, guest_name, guest_email, guest_phone, seats, total_amount, package_id, scelte, conferma_inviata_il, annulla_token')
       .eq('id', bookingId).maybeSingle()
     if (!b) return { ok: false, motivo: 'Prenotazione non trovata' }
 
@@ -87,7 +88,9 @@ export async function mandaConfermaEvento(bookingId) {
             dataOra ? { label: 'Quando', value: dataOra } : null,
             ev.location ? { label: 'Dove', value: ev.location } : null,
             { label: 'Posti', value: String(b.seats || 1) },
-            pkg?.name ? { label: 'Pacchetto', value: pkg.name } : null,
+            // Con le opzioni (migration 148): «1 × Cena & spettacolo · 2 × Ingresso + drink».
+            b.scelte?.length ? { label: 'Hai prenotato', value: riassuntoScelte(b.scelte) }
+              : pkg?.name ? { label: 'Pacchetto', value: pkg.name } : null,
             // Cosa si è comprato, come lo ha scritto il locale (migration 146).
             ev.comprende?.trim() ? { label: 'Comprende', value: ev.comprende.trim() } : null,
             b.total_amount ? { label: 'Totale', value: `€${b.total_amount}` } : null,

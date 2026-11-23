@@ -4,7 +4,7 @@
 export default {
   voce: 'eventi',
   titolo: 'Eventi',
-  rivista: '2026-11-18',
+  rivista: '2026-11-23',
   percorsi: ['/admin/eventi'],
   pagine: [
     'components/admin/eventi/EventiListPage.jsx',
@@ -18,7 +18,7 @@ export default {
     'Il pulsante di prenotazione', 'Posti disponibili', 'Di cui tenuti per il telefono', 'Quanto si paga prenotando (%)',
     'Pubblicato', 'Chiedi il telefono per forza', 'Non accetto piu prenotazioni',
     'Chi ha prenotato può annullare da solo', 'Quando si libera un posto, offrilo al primo in lista',
-    'Avvisami di ogni prenotazione', "Manda conferma all'ospite", 'Aggiungi pacchetto', 'Post social',
+    'Avvisami di ogni prenotazione', "Manda conferma all'ospite", 'Più proposte con prezzi diversi', 'Opzioni e prezzi', 'Aggiungi opzione', 'Post social',
     'Segna prenotazione', 'Scrivi a chi ha prenotato', 'Confermate', 'Attendono il pagamento', 'Da confermare',
     'Lista d’attesa', 'Non andate a buon fine', 'Conferma prenotazione', 'Conferma: paga sul posto', 'Assegna un posto',
     'Annulla prenotazione', 'Ripristina prenotazione', 'Modifica', 'Chiedi il pagamento', 'Elimina definitivamente',
@@ -41,7 +41,10 @@ export default {
       testo: [
         'In «Posti disponibili» metti la capienza vera. Se una parte la vendi al telefono, scrivila in «Di cui tenuti per il telefono»: il sito vende solo il resto e poi dice «esaurito».',
         '«Quanto si paga prenotando (%)»: 0 si paga all’ingresso, 100 si paga tutto subito, 30 è un acconto. Per incassare online serve un conto collegato in Pagamenti; senza, la prenotazione si registra e si paga sul posto.',
-        'Con «Aggiungi pacchetto» crei varianti con prezzi diversi (solo ingresso, cena inclusa…).',
+        'Più proposte nella stessa serata (per esempio «Cena & spettacolo» ai tavoli e «Ingresso + drink» al bancone): premi «Più proposte con prezzi diversi». Il prezzo e i posti di adesso diventano la prima opzione, e se c’erano già prenotazioni vanno lì.',
+        'In «Opzioni e prezzi» ogni opzione ha nome, prezzo, posti (vuoto = senza limite), quanti tenerne per il telefono e quanto si paga prenotando: per esempio la cena al 100% e l’ingresso allo 0%, sul posto. I posti dell’evento sono la somma delle opzioni, li calcoliamo noi. Con «Aggiungi opzione» ne metti un’altra.',
+        'Chi prenota sceglie quante di ognuna (1 cena e 2 ingressi, solo cene, solo ingressi) e vede il totale. Paga adesso la somma delle quote, il resto sul posto. Un’opzione esaurita si chiude da sola mentre le altre restano prenotabili, e chi la voleva si mette in lista d’attesa per quella.',
+        'Un’opzione che ha già delle prenotazioni non si può togliere: prima annullale o spostale con «Modifica».',
       ],
     },
     {
@@ -56,7 +59,7 @@ export default {
     {
       titolo: 'Chi viene: le prenotazioni dell’evento',
       testo: [
-        'Dall’elenco premi «Prenotazioni →». In cima trovi posti presi, numero di prenotazioni e quanto vale la serata (e quanto è già incassato online).',
+        'Dall’elenco premi «Prenotazioni →». In cima trovi posti presi, numero di prenotazioni e quanto vale la serata (e quanto è già incassato online). Se l’evento ha più opzioni, sotto c’è il conto di ognuna — quante cene, quanti ingressi, quanti in lista — e ogni prenotazione dice cosa ha preso.',
         'Le persone sono divise in gruppi: «Confermate» (in ordine alfabetico, è l’elenco della porta), «Attendono il pagamento», «Da confermare», «Lista d’attesa», «Non andate a buon fine».',
         'Una prenotazione presa al telefono si segna con «Segna prenotazione»; subito dopo puoi premere «Chiedi il pagamento» per mandarle un link.',
         '«Scrivi a chi ha prenotato» manda un messaggio a tutti quelli che hanno lasciato un’email: un promemoria, o un cambio d’orario.',
@@ -66,7 +69,7 @@ export default {
       titolo: 'Cambiare una prenotazione',
       testo: [
         'Sotto ogni prenotazione c’è il pulsante del gesto principale: «Conferma prenotazione» (o «Conferma: paga sul posto» per chi stava pagando online), «Assegna un posto» per chi è in lista, «Annulla prenotazione», «Ripristina prenotazione».',
-        '«Modifica» corregge nome, recapiti, posti e note, e ti dice prima quanti posti aggiungi o liberi.',
+        '«Modifica» corregge nome, recapiti, posti e note, e ti dice prima quanti posti aggiungi o liberi. Con più opzioni cambi la quantità di ognuna.',
         '«Elimina definitivamente» cancella la prenotazione con tutti i suoi dati: per una disdetta usa «Annulla prenotazione», che la tiene nello storico.',
       ],
     },

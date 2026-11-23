@@ -1320,7 +1320,7 @@ export default function LandingBlockRenderer({ blocks: blocchiSalvati, entity, e
       day: '2-digit', month: 'long', year: 'numeric', hour: undefined, minute: undefined,
       locale: lang === 'en' ? 'en-GB' : 'it-IT',
     })
-    const prezzo = concluso ? null : prezzoDaMostrare(ev, { gratuito: tr('free', lang) })
+    const prezzo = concluso ? null : prezzoDaMostrare(ev, { gratuito: tr('free', lang), da: lang === 'en' ? 'from' : 'da' })
     // L'indirizzo parlante quando c'è: è quello che finisce nei risultati di
     // ricerca e nei link condivisi. L'id resta come ripiego.
     if (soloLocandina && ev.cover_url) return (

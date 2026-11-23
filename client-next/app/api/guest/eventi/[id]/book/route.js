@@ -1,6 +1,6 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { recomputeEventSeats } from '@/lib/event-seats'
-import { confermaPostiEvento } from '@/lib/capienza'
+import { confermaPostiEvento, confermaPostiOpzioni } from '@/lib/capienza'
 import { creaCheckout } from '@/lib/checkout'
 import { sendEmail } from '@/lib/send-email'
 import { emailTemplate, html } from '@/lib/email-template'
@@ -9,7 +9,7 @@ import { rateLimit, tooManyRequests, getClientIp } from '@/lib/rate-limit'
 import { mandaConfermaEvento } from '@/lib/evento-conferma'
 import { after } from 'next/server'
 import { registraContatto, tagEvento } from '@/lib/crm'
-import { postiRichiesti, rifiutoPrenotazione, contoEvento } from '@/lib/evento-prenotazione'
+import { richiestaEvento } from '@/lib/evento-prenotazione'
 import { oraLocale } from '@/lib/fuso'
 import { postiEvento, SOGLIA_AVVISO } from '@/lib/posti-evento'
 import { annunciaPrenotazioneEvento } from '@/lib/evento-prenotato'
@@ -78,18 +78,20 @@ export async function POST(request, props) {
     // sbagliare a chi guarda la pagina, non a chi manda una richiesta a mano.
     // Le stesse domande le fa il riepilogo che si legge prima di confermare:
     // stanno in `lib/evento-prenotazione.js`, così le risposte non divergono.
-    const reqSeats = postiRichiesti(seats)
-    if (!reqSeats) return Response.json({ error: 'Indica per quante persone vuoi prenotare.' }, { status: 400 })
-    const rifiuto = rifiutoPrenotazione(evento, reqSeats)
-    if (rifiuto) return Response.json(rifiuto, { status: 400 })
+    // Con le opzioni (migration 148) arrivano `scelte` = [{ id, quantita }]:
+    // prezzi e posti si rileggono dal listino, opzione per opzione.
+    const richiesta = richiestaEvento(evento, { seats, scelte: body.scelte, package_id })
+    if (richiesta.rifiuto) return Response.json(richiesta.rifiuto, { status: 400 })
+    const { posti: reqSeats, scelte, totale, conto, righe } = richiesta
     const posti = postiEvento(evento)
 
     // Quanto c'è da pagare adesso: decide se la prenotazione nasce confermata o
     // in attesa del pagamento.
-    const { totale, conto } = contoEvento(evento, package_id, reqSeats)
     const { data, error } = await supabaseAdmin.from('event_bookings').insert({
       event_id: params.id, guest_name, guest_email,
-      guest_phone: guest_phone || null, package_id: package_id || null,
+      guest_phone: guest_phone || null,
+      package_id: scelte ? (scelte.length === 1 ? scelte[0].id : null) : (package_id || null),
+      scelte,
       seats: reqSeats, total_amount: totale, notes: notes || null,
       // ⚠️ Nasce CONFERMATA. Nasceva «in attesa» e nessuno l'ha mai confermata
       // — tredici su tredici, da aprile a settembre — mentre all'ospite arrivava
@@ -116,7 +118,17 @@ export async function POST(request, props) {
     // Il controllo qui sopra legge i posti prima di inserire: due richieste
     // simultanee lo superano entrambe. Qui si verifica l'ordine di arrivo e chi
     // è in eccesso si ritira — prima di scrivere email a chiunque.
-    if (!(await confermaPostiEvento(params.id, data.id, posti.illimitato ? null : posti.limiteOnline))) {
+    // Con le opzioni la corsa si arbitra opzione per opzione: ognuna ha i suoi posti.
+    if (scelte) {
+      const persa = await confermaPostiOpzioni(params.id, data.id, 'online')
+      if (persa) {
+        await recomputeEventSeats(params.id)
+        return Response.json({
+          error: `Qualcuno ha preso l'ultimo posto per «${persa}» un istante prima.`,
+          lista_attesa: !!evento.lista_attesa,
+        }, { status: 400 })
+      }
+    } else if (!(await confermaPostiEvento(params.id, data.id, posti.illimitato ? null : posti.limiteOnline))) {
       await recomputeEventSeats(params.id)
       // Qui ci arriva solo chi ha perso una corsa per un soffio: due richieste
       // arrivate insieme sull'ultimo posto. Va detto così, non «non disponibili».
@@ -145,19 +157,29 @@ export async function POST(request, props) {
         const base = (process.env.CLIENT_URL ?? '').trim() || new URL(request.url).origin
         const esito = await creaCheckout({
           aziendaId: evento.azienda_id,
-          righe: [{
-            nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`,
-            importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined,
-            descrizione: cosaComprende(evento, (evento.packages || []).find(p => p.id === package_id)),
-          }],
+          // Con le opzioni una voce per opzione da pagare («2 × Cena &
+          // spettacolo — acconto 30%»): la ricevuta dice cosa si è pagato.
+          righe: righe
+            ? righe.map(r => ({
+              nome: `${evento.title} — ${r.nome}`, importo: r.importo, quantita: r.quantita,
+              immagine: evento.cover_url || undefined,
+              descrizione: cosaComprende({ comprende: evento.comprende }, { description: (evento.packages || []).find(p => p.id === r.id)?.description }),
+            }))
+            : [{
+              nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`,
+              importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined,
+              descrizione: cosaComprende(evento, (evento.packages || []).find(p => p.id === package_id)),
+            }],
           email: guest_email.trim(),
           successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
           cancelUrl: `${base}/checkout/annullato`,
           // La cassa si chiude da sola: chi non paga non tiene il posto.
           minutiPerPagare: MINUTI_PER_PAGARE,
         })
+        // `importo_online` = la cifra portata alla cassa: con quote diverse per
+        // opzione non si ricava più da una percentuale sola dell'evento.
         await supabaseAdmin.from('event_bookings')
-          .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato' })
+          .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato', importo_online: conto.dovuto })
           .eq('id', data.id)
         pagamento = { url: esito.url, importo: conto.dovuto, saldo: conto.saldo, tutto: conto.tutto }
       } catch (e) {

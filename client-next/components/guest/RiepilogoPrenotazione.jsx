@@ -60,12 +60,21 @@ export default function RiepilogoPrenotazione({
       )}
 
       <div style={{ borderTop: `1px solid ${c.bordo}`, borderBottom: `1px solid ${c.bordo}`, margin: '14px 0' }}>
-        <div style={riga}><span>{t.posti}</span><span style={{ color: c.testo }}>{riepilogo.posti}</span></div>
+        {/* Con le opzioni una riga per ognuna: «2 × Cena & spettacolo · €60». */}
+        {riepilogo.voci?.length
+          ? riepilogo.voci.map((v, i) => (
+            <div key={i} style={riga}>
+              <span style={{ overflowWrap: 'anywhere' }}>{v.quantita} × {v.nome}</span>
+              <span style={{ color: c.testo, whiteSpace: 'nowrap' }}>{euro(v.quantita * v.prezzo)}</span>
+            </div>
+          ))
+          : <div style={riga}><span>{t.posti}</span><span style={{ color: c.testo }}>{riepilogo.posti}</span></div>}
         {!riepilogo.tutto && (
           <div style={riga}><span>{t.totale}</span><span style={{ color: c.testo }}>{euro(riepilogo.totale)}</span></div>
         )}
         <div style={{ ...riga, fontWeight: 700, fontSize: 16.5, color: c.testo }}>
-          <span>{t.paghiOra}{!riepilogo.tutto && <span style={{ fontWeight: 400, fontSize: 13, color: c.tenue }}> ({t.acconto(riepilogo.perc)})</span>}</span>
+          {/* Con opzioni a quote diverse una percentuale sola non direbbe il vero. */}
+          <span>{t.paghiOra}{!riepilogo.tutto && !riepilogo.voci?.length && <span style={{ fontWeight: 400, fontSize: 13, color: c.tenue }}> ({t.acconto(riepilogo.perc)})</span>}</span>
           <span>{euro(riepilogo.da_pagare)}</span>
         </div>
         {!riepilogo.tutto && riepilogo.saldo > 0 && (

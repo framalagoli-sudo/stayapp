@@ -12,7 +12,10 @@
 // sistema: gli si tiene una quota, e il sito non può sovravvendere nemmeno se
 // nessuno segna niente. Chi prende una prenotazione a mano può usarli: sono suoi.
 //
-// ⚠️ Nessuna dipendenza: lo importano sia i componenti del browser sia le route.
+// ⚠️ Nessuna dipendenza (le opzioni sono a loro volta senza): lo importano sia
+// i componenti del browser sia le route.
+import { opzioniPubbliche } from './opzioni-evento'
+
 export function postiEvento(evento) {
   const capienza = Number(evento?.seats_total) || 0
   const prenotati = Math.max(0, Number(evento?.seats_booked) || 0)
@@ -42,9 +45,15 @@ export function postiEvento(evento) {
 // telefono — un dato suo, non dei visitatori (segnalato il 30/09/2026 dalla
 // sonda delle colonne pubbliche). Le route pubbliche passano tutte da qui.
 export function postiPubblici(evento) {
-  const { seats_total, seats_booked, posti_riservati, ...resto } = evento || {}
+  const { seats_total, seats_booked, posti_riservati, opzioni_prenotate, packages, ...resto } = evento || {}
   const p = postiEvento({ seats_total, seats_booked, posti_riservati })
-  return { ...resto, posti_online: p.illimitato ? null : p.liberiOnline }
+  // Le opzioni hanno posti e posti per il telefono loro: escono solo come
+  // «quanti se ne possono ancora prenotare», con la stessa regola.
+  return {
+    ...resto,
+    packages: opzioniPubbliche({ packages, opzioni_prenotate }),
+    posti_online: p.illimitato ? null : p.liberiOnline,
+  }
 }
 
 // Sotto questa soglia si avvisa chi organizza: è il momento in cui deve

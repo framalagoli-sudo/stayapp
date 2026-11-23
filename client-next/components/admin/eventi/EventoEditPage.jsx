@@ -20,7 +20,10 @@ const INCLUDES_OPTIONS = [
   { key: 'ingresso',   label: 'Ingresso incluso' },
 ]
 
-const BLANK_PKG = { id: '', name: '', description: '', price: '', includes: [] }
+// Un'opzione dell'evento (migration 148): posti vuoto = senza limite,
+// acconto = quanto si paga prenotando, per questa opzione.
+const BLANK_PKG = { id: '', name: '', description: '', price: '', includes: [], posti: '', posti_riservati: '', acconto_percentuale: '' }
+const numero = v => (v === '' || v == null ? null : Number(v))
 
 
 export default function EventoEditPage() {
@@ -103,6 +106,7 @@ export default function EventoEditPage() {
           send_guest_confirmation: ev.send_guest_confirmation ?? true,
           packages:    (ev.packages || []).map(p => ({
             ...p, price: p.price ?? '', includes: p.includes || [],
+            posti: p.posti ?? '', posti_riservati: p.posti_riservati || '', acconto_percentuale: p.acconto_percentuale ?? '',
           })),
         })
         setCaricato(true)
@@ -112,16 +116,37 @@ export default function EventoEditPage() {
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
 
+  // Un'opzione nuova parte con la quota dell'evento: è quella che il titolare
+  // aveva già deciso, e la cambia riga per riga.
   function addPackage() {
-    setForm(f => ({ ...f, packages: [...f.packages, { ...BLANK_PKG, id: crypto.randomUUID() }] }))
+    setForm(f => ({ ...f, packages: [...f.packages, { ...BLANK_PKG, id: crypto.randomUUID(), acconto_percentuale: f.acconto_percentuale ?? '' }] }))
+  }
+
+  // Il passaggio da prezzo unico a opzioni: il prezzo e i posti di adesso
+  // diventano la PRIMA opzione (non si perde niente), più una seconda da
+  // scrivere. Le prenotazioni già fatte vanno nella prima (lo fa il server).
+  function iniziaOpzioni() {
+    setForm(f => ({
+      ...f,
+      packages: [
+        { ...BLANK_PKG, id: crypto.randomUUID(), price: f.price, posti: f.seats_total, posti_riservati: f.posti_riservati, acconto_percentuale: f.acconto_percentuale ?? '' },
+        { ...BLANK_PKG, id: crypto.randomUUID(), acconto_percentuale: f.acconto_percentuale ?? '' },
+      ],
+    }))
   }
 
   function updatePkg(pkgId, patch) {
     setForm(f => ({ ...f, packages: f.packages.map(p => p.id === pkgId ? { ...p, ...patch } : p) }))
   }
 
+  // Togliendo l'ultima opzione si torna al prezzo unico, coi numeri di quella.
   function removePkg(pkgId) {
-    setForm(f => ({ ...f, packages: f.packages.filter(p => p.id !== pkgId) }))
+    setForm(f => {
+      const resta = f.packages.filter(p => p.id !== pkgId)
+      if (resta.length) return { ...f, packages: resta }
+      const u = f.packages.find(p => p.id === pkgId) || {}
+      return { ...f, packages: [], price: u.price ?? f.price, seats_total: u.posti ?? '', posti_riservati: u.posti_riservati ?? '', acconto_percentuale: u.acconto_percentuale === '' ? f.acconto_percentuale : Number(u.acconto_percentuale) || 0 }
+    })
   }
 
   function toggleInclude(pkgId, key) {
@@ -130,6 +155,98 @@ export default function EventoEditPage() {
       ? pkg.includes.filter(k => k !== key)
       : [...pkg.includes, key]
     updatePkg(pkgId, { includes })
+  }
+
+  // «Opzioni e prezzi»: ogni opzione ha nome, prezzo, posti, posti per il
+  // telefono e quota da pagare prenotando. Il totale dell'evento si calcola.
+  function renderOpzioni() {
+    const limitate = form.packages.every(p => Number(p.posti) > 0)
+    const totale = form.packages.reduce((s, p) => s + (Number(p.posti) || 0), 0)
+    const telefono = form.packages.reduce((s, p) => s + (Number(p.posti) > 0 ? Number(p.posti_riservati) || 0 : 0), 0)
+    const campo = { ...inp, padding: '8px 10px' }
+    const piccola = { display: 'block', fontSize: 11.5, fontWeight: 600, color: '#666', marginBottom: 4 }
+    return (
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ ...lbl, marginBottom: 4 }}>Opzioni e prezzi</label>
+        <p style={{ margin: '0 0 12px', fontSize: 12, color: '#8a8a8a', lineHeight: 1.5 }}>
+          Ogni opzione ha i suoi posti: chi prenota ne sceglie quante vuole di ognuna. Posti vuoto = senza limite.
+        </p>
+        {form.packages.map(pkg => {
+          const posti = Number(pkg.posti) || 0
+          const online = Math.max(0, posti - (Number(pkg.posti_riservati) || 0))
+          const perc = pkg.acconto_percentuale === '' ? null : Number(pkg.acconto_percentuale)
+          return (
+            <div key={pkg.id} style={{ background: '#f9f9fb', border: '1px solid #eee', borderRadius: 12, padding: 14, marginBottom: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 10, alignItems: 'start', marginBottom: 10 }}>
+                <input value={pkg.name} onChange={e => updatePkg(pkg.id, { name: e.target.value })} maxLength={80}
+                  placeholder="Nome dell’opzione * (es. Cena & spettacolo)" style={{ ...campo, fontWeight: 600 }} />
+                <button type="button" onClick={() => removePkg(pkg.id)} title="Togli questa opzione" aria-label="Togli questa opzione"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 6 }}>
+                  <Trash2 size={16} strokeWidth={1.5} />
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 8 }}>
+                <div>
+                  <label style={piccola}>Prezzo (€)</label>
+                  <input type="number" min="0" step="0.5" value={pkg.price} onChange={e => updatePkg(pkg.id, { price: e.target.value })} placeholder="0" style={campo} />
+                </div>
+                <div>
+                  <label style={piccola}>Posti</label>
+                  <input type="number" min="1" value={pkg.posti} onChange={e => updatePkg(pkg.id, { posti: e.target.value })} placeholder="Senza limite" style={campo} />
+                </div>
+                {posti > 0 && (
+                  <div>
+                    <label style={piccola}>Di cui per il telefono</label>
+                    <input type="number" min="0" max={posti} value={pkg.posti_riservati} onChange={e => updatePkg(pkg.id, { posti_riservati: e.target.value })} placeholder="0" style={campo} />
+                  </div>
+                )}
+                <div>
+                  <label style={piccola}>Si paga prenotando (%)</label>
+                  <input type="number" min="0" max="100" step="5" value={pkg.acconto_percentuale}
+                    onChange={e => updatePkg(pkg.id, { acconto_percentuale: e.target.value === '' ? '' : String(Math.min(100, Math.max(0, parseInt(e.target.value) || 0))) })}
+                    placeholder="0" style={campo} />
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: '#777', lineHeight: 1.5, marginBottom: 8 }}>
+                {posti > 0 ? <>Il sito ne vende <strong>{online}</strong>{Number(pkg.posti_riservati) > 0 && <>, {Number(pkg.posti_riservati)} restano a te per il telefono</>}. </> : <>Posti senza limite. </>}
+                {perc > 0 && Number(pkg.price) > 0
+                  ? <>Chi prenota paga subito <strong>{(Math.round(Number(pkg.price) * perc) / 100).toFixed(2)} €</strong> a posto{perc < 100 && <>, il resto sul posto</>}.</>
+                  : <>Si paga sul posto.</>}
+              </div>
+              <input value={pkg.description} onChange={e => updatePkg(pkg.id, { description: e.target.value })} maxLength={300}
+                placeholder="Cosa comprende (es. cena con antipasto, primo e dolce + spettacolo)" style={{ ...campo, marginBottom: 8 }} />
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {INCLUDES_OPTIONS.map(({ key, label }) => {
+                  const active = pkg.includes.includes(key)
+                  return (
+                    <button key={key} type="button" onClick={() => toggleInclude(pkg.id, key)}
+                      style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 16, border: `1px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', cursor: 'pointer' }}>
+                      {active ? '✓ ' : '+ '}{label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginTop: 4 }}>
+          <button type="button" onClick={addPackage}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>
+            <Plus size={14} strokeWidth={2.5} /> Aggiungi opzione
+          </button>
+          <span style={{ fontSize: 13, color: '#444' }}>
+            {limitate
+              ? <>Totale: <strong>{totale} posti</strong>{telefono > 0 && <> · di cui {telefono} per il telefono</>}</>
+              : <>Totale: <strong>senza limite</strong> (almeno un’opzione non ha un numero di posti)</>}
+          </span>
+        </div>
+        {Number(form.acconto_percentuale) > 0 || form.packages.some(p => Number(p.acconto_percentuale) > 0) ? (
+          <p style={{ margin: '10px 0 0', fontSize: 12, color: '#b7791f', lineHeight: 1.5 }}>
+            Per incassare online serve un conto collegato in <strong>Pagamenti</strong>: senza, la prenotazione si registra lo stesso e si paga sul posto.
+          </p>
+        ) : null}
+      </div>
+    )
   }
 
   async function handleCoverUpload(file) {
@@ -150,6 +267,12 @@ export default function EventoEditPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
+    // Un'opzione senza nome non si può scegliere: il server la scarterebbe in
+    // silenzio, e sparirebbe insieme ai suoi posti. Meglio dirlo adesso.
+    if (form.packages.some(p => !String(p.name || '').trim())) {
+      setError('Dai un nome a ogni opzione (es. «Cena & spettacolo»), oppure toglila.')
+      return
+    }
     setSaving(true)
     try {
       const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -170,6 +293,9 @@ export default function EventoEditPage() {
         packages: form.packages.map(p => ({
           ...p,
           price: p.price === '' ? 0 : parseFloat(p.price),
+          posti: numero(p.posti),
+          posti_riservati: numero(p.posti_riservati) || 0,
+          acconto_percentuale: numero(p.acconto_percentuale),
         })),
         // Formato e punto focale vivono nel loro stato, non in `form`: senza
         // queste due righe si scelgono, sembrano salvati e non arrivano mai.
@@ -305,7 +431,13 @@ export default function EventoEditPage() {
 
               {form.prezzo_modo === 'cifra' && (
                 <div style={{ fontSize: 12.5, color: '#666', marginBottom: 12 }}>
-                  {Number(form.price) > 0
+                  {form.packages.length > 0
+                    ? (() => {
+                        const prezzi = form.packages.map(p => Number(p.price) || 0)
+                        const min = Math.min(...prezzi)
+                        return <>Si legge il prezzo più basso delle opzioni: oggi <strong>{new Set(prezzi).size > 1 ? 'da ' : ''}€{min}</strong>.</>
+                      })()
+                    : Number(form.price) > 0
                     ? <>Si legge la cifra del campo <strong>Prezzo base</strong> qui sotto: oggi <strong>€{form.price}</strong>.</>
                     : <>Il <strong>Prezzo base</strong> qui sotto è a zero: si leggerebbe «Gratis». Scrivi la cifra, o scegli «Gratuito».</>}
                 </div>
@@ -481,6 +613,7 @@ export default function EventoEditPage() {
             <input value={form.location} onChange={e => set('location', e.target.value)} style={inp} placeholder="es. Sala principale, Terrazza, Giardino" />
           </div>
 
+          {form.packages.length > 0 ? renderOpzioni() : (<>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div style={fieldWrap}>
               <label style={lbl}>Prezzo base (€)</label>
@@ -528,6 +661,18 @@ export default function EventoEditPage() {
               si registra lo stesso e si paga sul posto.
             </div>
           )}
+
+          {/* Più proposte nella stessa serata (Garage 22: cena ai tavoli,
+              ingresso + drink al bancone). Il prezzo e i posti di adesso
+              diventano la prima opzione. */}
+          <button type="button" onClick={iniziaOpzioni}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '9px 14px', cursor: 'pointer', marginBottom: 6 }}>
+            <Plus size={14} strokeWidth={2.5} /> Più proposte con prezzi diversi
+          </button>
+          <p style={{ margin: '0 0 16px', fontSize: 12, color: '#8a8a8a', lineHeight: 1.5 }}>
+            Es. «Cena & spettacolo» e «Ingresso + drink», ognuna coi suoi posti e il suo prezzo. Chi prenota può prenderne più d’una insieme.
+          </p>
+          </>)}
 
           {entityOptions.length > 0 && (
             <div style={fieldWrap}>
@@ -639,47 +784,7 @@ export default function EventoEditPage() {
           </div>
         </div>
 
-        {/* Pacchetti */}
-        <div style={cardStyle}>
-          <h3 style={sectionTitle}>Pacchetti</h3>
-          <p style={{ fontSize: 13, color: '#888', marginBottom: 16, marginTop: -8 }}>
-            Aggiungi varianti con prezzi diversi (es. solo ingresso, cena inclusa, pacchetto weekend).
-            Se non aggiungi pacchetti, verrà usato il prezzo base.
-          </p>
-          {form.packages.map(pkg => (
-            <div key={pkg.id} style={{ background: '#f9f9fb', borderRadius: 12, padding: 16, marginBottom: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px auto', gap: 10, marginBottom: 10, alignItems: 'center' }}>
-                <input value={pkg.name} onChange={e => updatePkg(pkg.id, { name: e.target.value })}
-                  placeholder="Nome pacchetto *" style={inp} />
-                <input type="number" min="0" step="0.5" value={pkg.price} onChange={e => updatePkg(pkg.id, { price: e.target.value })}
-                  placeholder="€" style={inp} />
-                <button type="button" onClick={() => removePkg(pkg.id)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a8a8a', padding: 4 }}>
-                  <Trash2 size={16} strokeWidth={1.5} />
-                </button>
-              </div>
-              <input value={pkg.description} onChange={e => updatePkg(pkg.id, { description: e.target.value })}
-                placeholder="Descrizione (opzionale)" style={{ ...inp, marginBottom: 10 }} />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {INCLUDES_OPTIONS.map(({ key, label }) => {
-                  const active = pkg.includes.includes(key)
-                  return (
-                    <button key={key} type="button" onClick={() => toggleInclude(pkg.id, key)}
-                      style={{ fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 16, border: `1px solid ${active ? '#1a1a2e' : '#ddd'}`, background: active ? '#1a1a2e' : '#fff', color: active ? '#fff' : '#555', cursor: 'pointer' }}>
-                      {active ? '✓ ' : '+ '}{label}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-          <button type="button" onClick={addPackage}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#1a1a2e', background: '#f0f4ff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer' }}>
-            <Plus size={14} strokeWidth={2.5} /> Aggiungi pacchetto
-          </button>
-        </div>
-
-        {error && <p style={{ color: '#c00', fontSize: 13, marginBottom: 12 }}>{error}</p>}
+        {error &&<p style={{ color: '#c00', fontSize: 13, marginBottom: 12 }}>{error}</p>}
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button type="submit" disabled={saving}

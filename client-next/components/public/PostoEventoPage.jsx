@@ -65,7 +65,7 @@ export default function PostoEventoPage() {
             {riga('Evento', info.evento.titolo)}
             {riga('Quando', info.evento.quando)}
             {riga('Dove', info.evento.luogo)}
-            {riga('Posti', String(info.posti))}
+            {info.cosa ? riga('Per', info.cosa) : riga('Posti', String(info.posti))}
             {s === 'valida' && info.da_pagare > 0 && riga('Da pagare adesso', euro(info.da_pagare))}
             {s === 'valida' && riga('Tenuto per te fino alle', info.scade_alle)}
           </div>

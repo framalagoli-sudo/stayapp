@@ -3,6 +3,8 @@ import { requireRecordAccess } from '@/lib/server-auth'
 import { recomputeEventSeats } from '@/lib/event-seats'
 import { registraContatto, tagEvento } from '@/lib/crm'
 import { after } from 'next/server'
+import { haOpzioni, leggiScelte, rifiutoScelte, contoScelte } from '@/lib/opzioni-evento'
+import { confermaPostiOpzioni } from '@/lib/capienza'
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -36,19 +38,31 @@ export async function POST(request, props) {
     const { response } = await requireRecordAccess(request, 'eventi', params.id)
     if (response) return response
 
-    const { guest_name, guest_email, guest_phone, seats, notes } = await request.json()
+    const corpo = await request.json()
+    const { guest_name, guest_email, guest_phone, seats, notes } = corpo
     if (!guest_name?.trim()) return Response.json({ error: 'Serve almeno il nome' }, { status: 400 })
 
-    const posti = Math.max(1, parseInt(seats) || 1)
+    let posti = Math.max(1, parseInt(seats) || 1)
 
     const { data: evento } = await supabaseAdmin.from('eventi')
-      .select('id, title, azienda_id, entity_id, price, seats_total, seats_booked').eq('id', params.id).maybeSingle()
+      .select('id, title, azienda_id, entity_id, price, seats_total, seats_booked, packages, opzioni_prenotate, acconto_percentuale').eq('id', params.id).maybeSingle()
     if (!evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
 
-    // ⚠️ Il limite vale anche qui: senza, il titolare può segnare più posti di
-    // quanti ne ha e scoprirlo la sera dell'evento. Si avvisa e si lascia
-    // decidere a lui — è il suo locale, magari aggiunge un tavolo.
-    if (evento.seats_total && (evento.seats_booked || 0) + posti > evento.seats_total) {
+    // Con le opzioni (migration 148) si segnano le quantità di ognuna, e il
+    // limite è quello di ogni opzione — posti per il telefono compresi: sono suoi.
+    let scelte = null, totale = (evento.price || 0) * posti
+    if (haOpzioni(evento)) {
+      const letto = leggiScelte(evento, corpo.scelte)
+      if (letto.errore) return Response.json({ error: letto.errore }, { status: 400 })
+      const pieno = rifiutoScelte(evento, letto.scelte, evento.opzioni_prenotate || {}, { canale: 'titolare' })
+      if (pieno) return Response.json({ error: `${pieno.error} Per accettarne di più, alza prima i posti di quell'opzione nell'evento.` }, { status: 400 })
+      scelte = letto.scelte
+      posti = letto.posti
+      totale = contoScelte(scelte).totale
+    } else if (evento.seats_total && (evento.seats_booked || 0) + posti > evento.seats_total) {
+      // ⚠️ Il limite vale anche qui: senza, il titolare può segnare più posti di
+      // quanti ne ha e scoprirlo la sera dell'evento. Si avvisa e si lascia
+      // decidere a lui — è il suo locale, magari aggiunge un tavolo.
       return Response.json({
         error: `Restano ${Math.max(0, evento.seats_total - (evento.seats_booked || 0))} posti su ${evento.seats_total}. Per accettarne di più, alza prima i posti disponibili nell'evento.`,
       }, { status: 400 })
@@ -63,7 +77,9 @@ export async function POST(request, props) {
       guest_email: guest_email?.trim() || null,
       guest_phone: guest_phone?.trim() || null,
       seats: posti,
-      total_amount: (evento.price || 0) * posti,
+      scelte,
+      package_id: scelte?.length === 1 ? scelte[0].id : null,
+      total_amount: totale,
       notes: notes?.trim() || null,
       // Confermata: l'ha presa il titolare al telefono, non c'è niente da attendere.
       status: 'confirmed',
@@ -77,6 +93,15 @@ export async function POST(request, props) {
       conferma_inviata_il: new Date().toISOString(),
     }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
+
+    // Due segnate insieme sull'ultimo posto di un'opzione: passa la prima.
+    if (scelte) {
+      const persa = await confermaPostiOpzioni(params.id, data.id, 'titolare')
+      if (persa) {
+        await recomputeEventSeats(params.id)
+        return Response.json({ error: `Nel frattempo è stato preso l'ultimo posto per «${persa}».` }, { status: 409 })
+      }
+    }
 
     await recomputeEventSeats(params.id)
 

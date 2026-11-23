@@ -29,20 +29,29 @@ function modoDi(evento) {
   return null
 }
 
-export function prezzoDaMostrare(evento, { gratuito = 'Gratis' } = {}) {
+export function prezzoDaMostrare(evento, { gratuito = 'Gratis', da = 'da' } = {}) {
   if (!evento) return null
   if (evento.mostra_prezzo === false) return null
 
   const modo = modoDi(evento)
   if (modo === 'gratuito') return gratuito
   if (modo === 'testo') return String(evento.prezzo_testo || '').trim().slice(0, 40)
-  if (modo === 'cifra') return `€${Number(evento.price) || 0}`
+  if (modo === 'cifra') {
+    // Con opzioni a prezzi diversi (migration 148) «€15» direbbe che tutto
+    // costa 15: si scrive «da €15». `price` è già il più basso.
+    return `${prezziDiversi(evento) ? da + ' ' : ''}€${Number(evento.price) || 0}`
+  }
   return null
+}
+
+function prezziDiversi(evento) {
+  const prezzi = (evento?.packages || []).map(p => Number(p.price) || 0)
+  return new Set(prezzi).size > 1
 }
 
 // Per la riga «€25 / persona» della pagina di dettaglio, dove un pacchetto
 // scelto ha la precedenza sulla cifra dell'evento.
-export function prezzoPersona(evento, prezzoScelto, { gratuito = 'Gratuito', perPersona = '/ persona' } = {}) {
+export function prezzoPersona(evento, prezzoScelto, { gratuito = 'Gratuito', perPersona = '/ persona', da = 'da' } = {}) {
   // Qui vale il flag della PAGINA: mostrare il prezzo nell'elenco e mostrarlo
   // dentro sono due decisioni diverse. C'è chi non lo vuole in vetrina ma lo dà
   // a chi apre, e chi fa il contrario.
@@ -58,7 +67,7 @@ export function prezzoPersona(evento, prezzoScelto, { gratuito = 'Gratuito', per
   const modo = modoDi(evento)
   if (modo === 'gratuito') return gratuito
   if (modo === 'testo') return String(evento?.prezzo_testo || '').trim().slice(0, 40)
-  if (modo === 'cifra') return `€${Number(evento?.price) || 0} ${perPersona}`
+  if (modo === 'cifra') return `${prezziDiversi(evento) ? da + ' ' : ''}€${Number(evento?.price) || 0} ${perPersona}`
   return null
 }
 

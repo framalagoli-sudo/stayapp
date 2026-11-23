@@ -3,6 +3,7 @@ import { formatoValido, focalValido } from '@/lib/formati-foto'
 import { requireAuth, resolveAziendaId, entitaDellaAzienda } from '@/lib/server-auth'
 import { slugEvento, slugLibero } from '@/lib/evento-indirizzo'
 import { annullamentoPulito } from '@/lib/annullamento-regole'
+import { preparaOpzioni } from '@/lib/opzioni-salvataggio'
 
 // I tre modi in cui un evento può dire quanto costa (migration 123):
 // «gratuito», una cifra, o una frase scritta dal cliente. Niente = non si scrive.
@@ -94,6 +95,8 @@ export async function POST(request) {
     if (!(await entitaDellaAzienda(profile, payload.entity_tipo, payload.entity_id))) {
       return Response.json({ error: 'Entità non valida' }, { status: 404 })
     }
+    // Le opzioni (migration 148): pulite, e i posti dell'evento calcolati da loro.
+    await preparaOpzioni(null, payload)
     const { data, error } = await supabaseAdmin.from('eventi').insert({ ...payload, azienda_id, slug }).select().single()
     if (error) return Response.json({ error: error.message }, { status: 500 })
     return Response.json(data, { status: 201 })

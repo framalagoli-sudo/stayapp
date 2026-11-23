@@ -15,6 +15,7 @@ import { getAziendaLegale } from './guest-data'
 import { oraLocale } from './fuso'
 import { chiOrganizza, baseLink } from './evento-titolare'
 import { cosaComprende } from './prezzo-evento'
+import { haOpzioni, occupatiPerOpzione, postiOpzione, scelteDi, leggiScelte, contoScelte, riassuntoScelte } from './opzioni-evento'
 
 // La lista d'attesa che si muove da sola (decisione di Francesco, 26/10/2026).
 //
@@ -48,6 +49,8 @@ export async function muoviListaAttesa(eventId) {
     if (minuti < MINUTI_MINIMI) return { offerte: 0 }
 
     const occupati = await recomputeEventSeats(eventId)
+    // Con le opzioni ogni opzione ha la sua fila (migration 148).
+    if (haOpzioni(evento)) return await muoviPerOpzione(evento, minuti)
     const posti = postiEvento({ ...evento, seats_booked: occupati })
     if (posti.illimitato) return { offerte: 0 }
     let liberi = posti.liberiOnline
@@ -101,6 +104,75 @@ export async function muoviListaAttesa(eventId) {
   }
 }
 
+// La stessa cosa, opzione per opzione: si libera una cena → l'offerta va al
+// primo in fila PER LA CENA. Chi è in fila per un'altra opzione non c'entra.
+async function postiLiberiPerOpzione(evento) {
+  const { data } = await supabaseAdmin.from('event_bookings')
+    .select('seats, status, offerta_scade_il, scelte, package_id').eq('event_id', evento.id)
+  const occupati = occupatiPerOpzione(data)
+  const liberi = {}, limite = {}
+  for (const o of evento.packages || []) {
+    const p = postiOpzione(o, occupati[o.id])
+    if (p.illimitato) continue // un'opzione senza limite non ha fila
+    liberi[o.id] = p.liberiOnline
+    limite[o.id] = { tetto: p.limiteOnline, occupati: occupati[o.id] || 0 }
+  }
+  return { liberi, limite }
+}
+
+async function muoviPerOpzione(evento, minuti) {
+  const { liberi } = await postiLiberiPerOpzione(evento)
+  if (!Object.values(liberi).some(n => n > 0)) return { offerte: 0 }
+
+  const { data: inLista } = await supabaseAdmin.from('event_bookings')
+    .select('id, seats, scelte, package_id, guest_name, guest_email')
+    .eq('event_id', evento.id).eq('status', 'waitlist')
+    .is('offerta_scade_il', null).is('offerta_scaduta_il', null)
+    .order('created_at', { ascending: true }).limit(100)
+
+  const fatte = []
+  for (const b of inLista || []) {
+    const opz = scelteDi(b)[0]
+    if (!opz || !(liberi[opz.id] > 0) || !b.guest_email) continue
+    // Come sopra: chi chiede più posti di quelli liberi lascia passare gli altri.
+    if ((b.seats || 1) > liberi[opz.id]) continue
+    const token = randomUUID()
+    const scade = new Date(Date.now() + minuti * 60_000).toISOString()
+    const { data: presa } = await supabaseAdmin.from('event_bookings')
+      .update({ offerta_token: token, offerta_scade_il: scade, updated_at: new Date().toISOString() })
+      .eq('id', b.id).eq('status', 'waitlist').is('offerta_scade_il', null).select('id')
+    if (!presa?.length) continue
+    fatte.push({ ...b, token, scade, opzione: opz.id })
+    liberi[opz.id] -= b.seats || 1
+  }
+  if (!fatte.length) return { offerte: 0 }
+
+  // Due giri insieme possono aver visto gli stessi posti: si riconta, e
+  // un'opzione andata oltre ritira le offerte appena fatte, dall'ultima.
+  await recomputeEventSeats(evento.id)
+  let { limite } = await postiLiberiPerOpzione(evento)
+  for (let i = fatte.length - 1; i >= 0; i--) {
+    const f = fatte[i], l = limite[f.opzione]
+    if (!l || l.occupati <= l.tetto) continue
+    await supabaseAdmin.from('event_bookings')
+      .update({ offerta_token: null, offerta_scade_il: null }).eq('id', f.id).eq('status', 'waitlist')
+    fatte.splice(i, 1)
+    await recomputeEventSeats(evento.id);
+    ({ limite } = await postiLiberiPerOpzione(evento))
+  }
+
+  for (const b of fatte) await mandaOfferta(evento, b)
+  return { offerte: fatte.length }
+}
+
+// Le scelte di una riga ripassate sul listino di ADESSO (il prezzo può essere
+// cambiato da quando la persona si è messa in lista): se un'opzione non c'è
+// più vale la fotografia di allora.
+function scelteAttuali(evento, b) {
+  const letto = leggiScelte(evento, scelteDi(b).map(s => ({ id: s.id, quantita: Number(s.quantita) || 1 })))
+  return letto.errore ? (b.scelte || null) : letto.scelte
+}
+
 async function mandaOfferta(evento, b) {
   if (!(process.env.RESEND_API_KEY ?? '').trim()) return
   try {
@@ -119,7 +191,7 @@ async function mandaOfferta(evento, b) {
         rows: [
           quando ? { label: 'Quando', value: quando } : null,
           evento.location ? { label: 'Dove', value: evento.location } : null,
-          { label: 'Posti', value: String(b.seats || 1) },
+          scelteDi(b).length && b.scelte ? { label: 'Per', value: riassuntoScelte(b.scelte) } : { label: 'Posti', value: String(b.seats || 1) },
         ].filter(Boolean),
         ctaText: 'Prendi il posto', ctaUrl: url,
       }),
@@ -159,7 +231,7 @@ async function rigaDaToken(token) {
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   if (typeof token !== 'string' || !UUID.test(token)) return null
   const { data } = await supabaseAdmin.from('event_bookings')
-    .select('id, event_id, status, seats, package_id, guest_name, guest_email, offerta_scade_il, offerta_scaduta_il')
+    .select('id, event_id, status, seats, package_id, scelte, guest_name, guest_email, offerta_scade_il, offerta_scaduta_il')
     .eq('offerta_token', token).maybeSingle()
   return data
 }
@@ -172,7 +244,8 @@ export async function leggiOfferta(token) {
   const { data: evento } = await supabaseAdmin.from('eventi').select(EVENTO).eq('id', b.event_id).maybeSingle()
   if (!evento) return { stato: 'non_valido' }
   const fuso = evento.aziende?.fuso_orario
-  const { conto } = contoEvento(evento, b.package_id, b.seats || 1)
+  const scelte = haOpzioni(evento) ? scelteAttuali(evento, b) : null
+  const { conto } = scelte ? contoScelte(scelte) : contoEvento(evento, b.package_id, b.seats || 1)
   const stato = b.status === 'confirmed' || b.status === 'pending' ? 'presa'
     : b.status === 'cancelled' ? 'rinunciato'
     : eventoConcluso(evento) ? 'concluso'
@@ -187,6 +260,8 @@ export async function leggiOfferta(token) {
     },
     organizzatore: org.nome,
     posti: b.seats || 1,
+    // Per quale opzione è il posto («2 × Cena & spettacolo»): niente di personale.
+    cosa: scelte ? riassuntoScelte(scelte) : null,
     scade_alle: stato === 'valida' ? oraLocale(b.offerta_scade_il, fuso, { day: undefined, month: undefined, year: undefined, hour: '2-digit', minute: '2-digit' }) : null,
     da_pagare: conto.dovuto > 0 ? conto.dovuto : 0,
   }
@@ -204,7 +279,8 @@ export async function prendiPosto(token, origine) {
   if (b.status !== 'waitlist') return { errore: b.status === 'cancelled' ? 'Hai già rinunciato a questo posto.' : 'Il posto è già tuo.', status: 409 }
 
   const ora = new Date().toISOString()
-  const { totale, conto } = contoEvento(evento, b.package_id, b.seats || 1)
+  const scelte = haOpzioni(evento) ? scelteAttuali(evento, b) : null
+  const { totale, conto, righe } = scelte ? contoScelte(scelte) : { ...contoEvento(evento, b.package_id, b.seats || 1), righe: null }
   const daPagare = conto.dovuto > 0
 
   // ⚠️ Lo scambio è atomico: solo se l'offerta è ancora valida in questo
@@ -213,6 +289,7 @@ export async function prendiPosto(token, origine) {
     .update({
       status: daPagare ? 'pending' : 'confirmed',
       total_amount: totale, offerta_scade_il: null,
+      ...(scelte ? { scelte } : {}),
       ...(daPagare ? { cassa_aperta_il: ora } : { pagamento_stato: 'non_richiesto' }),
       updated_at: ora,
     })
@@ -225,14 +302,16 @@ export async function prendiPosto(token, origine) {
       const base = (process.env.CLIENT_URL ?? '').trim() || origine
       const esito = await creaCheckout({
         aziendaId: evento.azienda_id,
-        righe: [{ nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`, importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined, descrizione: cosaComprende(evento, (evento.packages || []).find(p => p.id === b.package_id)) }],
+        righe: righe
+          ? righe.map(r => ({ nome: `${evento.title} — ${r.nome}`, importo: r.importo, quantita: r.quantita, immagine: evento.cover_url || undefined, descrizione: cosaComprende({ comprende: evento.comprende }, { description: (evento.packages || []).find(p => p.id === r.id)?.description }) }))
+          : [{ nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`, importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined, descrizione: cosaComprende(evento, (evento.packages || []).find(p => p.id === b.package_id)) }],
         email: b.guest_email,
         successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${base}/checkout/annullato`,
         minutiPerPagare: MINUTI_PER_PAGARE,
       })
       await supabaseAdmin.from('event_bookings')
-        .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato' }).eq('id', b.id)
+        .update({ pagamento_id: esito.sessionId, pagamento_stato: 'non_pagato', importo_online: conto.dovuto }).eq('id', b.id)
       return { pagamento: { url: esito.url, importo: conto.dovuto } }
     } catch (e) {
       // Come per chi prenota dal sito: senza cassa il posto resta suo e si paga

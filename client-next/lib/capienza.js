@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-server'
 import { siSovrappongono, fineOccupazione } from '@/lib/booking-giornaliero'
 import { occupaPosto } from '@/lib/gruppi-prenotazioni-evento'
+import { occupatiPerOpzione, postiOpzione, scelteDi } from '@/lib/opzioni-evento'
 
 // La capienza deve reggere anche a richieste simultanee.
 //
@@ -56,6 +57,39 @@ export async function confermaPostiEvento(eventId, bookingId, limite = null) {
   } catch (e) {
     console.error('[capienza] evento:', e.message)
     return true // in dubbio non si annulla una prenotazione già accettata
+  }
+}
+
+// Lo stesso, opzione per opzione (migration 148): ogni opzione ha i suoi posti,
+// e due richieste simultanee sull'ultima cena non devono passare tutte e due.
+// `canale` = 'online' (al netto dei posti tenuti per il telefono) o 'titolare'.
+// Restituisce null se la prenotazione può restare, oppure il nome dell'opzione
+// su cui ha perso (la prenotazione è già stata ritirata).
+export async function confermaPostiOpzioni(eventId, bookingId, canale = 'online') {
+  try {
+    const { data: evento } = await supabaseAdmin.from('eventi').select('packages').eq('id', eventId).single()
+    const { data: tutte } = await supabaseAdmin.from('event_bookings')
+      .select('id, seats, created_at, status, offerta_scade_il, scelte, package_id').eq('event_id', eventId)
+    const mia = (tutte || []).find(b => b.id === bookingId)
+    if (!mia) return 'questa prenotazione'
+    // Stessa regola di sopra: chi è arrivato prima, più i posti già offerti a
+    // chi è in lista (sono suoi anche se l'offerta è nata dopo).
+    const prima = (tutte || []).filter(b => b.id !== mia.id && (primaDi(b, mia) || b.status === 'waitlist'))
+    const occupati = occupatiPerOpzione(prima)
+    for (const s of scelteDi(mia)) {
+      const o = (evento?.packages || []).find(x => x.id === s.id)
+      const p = postiOpzione(o, occupati[s.id])
+      if (p.illimitato) continue
+      const tetto = canale === 'titolare' ? p.capienza : p.limiteOnline
+      if ((occupati[s.id] || 0) + (Number(s.quantita) || 0) > tetto) {
+        await supabaseAdmin.from('event_bookings').delete().eq('id', bookingId)
+        return o?.name || 'questa opzione'
+      }
+    }
+    return null
+  } catch (e) {
+    console.error('[capienza] opzioni:', e.message)
+    return null // in dubbio non si annulla una prenotazione già accettata
   }
 }
 

@@ -1,6 +1,6 @@
 # Da fare — l'elenco unico delle cose aperte
 
-> **Aggiornato il 20/11/2026.**
+> **Aggiornato il 23/11/2026.**
 >
 > È l'**unico** posto delle cose aperte di OltreNova (decisione di Francesco, 18/11/2026:
 > «ogni avvio e per ogni aggiornamento lo teniamo bello fresco, sennò ci intoppiamo»).
@@ -107,6 +107,9 @@
 - [ ] **Proposti, non approvati**: verde WhatsApp scuro e grigi leggibili anche sui **siti** (nelle app
   sono già fatti) · titoli sottili nelle tessere del mosaico e nella fascia che scorre (cambia tutti
   i siti che li usano) · blocchi della ricognizione del 12/10 (barra fissa su telefono, varianti).
+- [ ] **Pagina pubblica dell'evento nei colori del sito** — oggi è turchese fisso (`#00b5b5`: icone,
+  pulsante, spunte, scelta delle opzioni) per tutti i clienti; su Garage 22 e TVB stona. Cambia
+  l'aspetto della pagina evento di tutti: Ettore lo propone con le schermate. (trovato il 23/11)
 
 ---
 
@@ -141,6 +144,9 @@
 - [ ] **Contratto art. 28 GDPR** verso i clienti (verificare nei Termini del 31/08, poi un legale).
 
 ### C3. Clienti
+- [ ] **Garage 22** — dire che negli eventi c'è «Più proposte con prezzi diversi» (cena 30 € + ingresso
+  con drink 15 €, posti e quota per ognuna, prenotazioni miste, lista d'attesa per opzione), e che le
+  prenotazioni già fatte finiscono nella prima opzione. (`CLAUDE.md` nota 94)
 - [ ] **Automax** — spiegare «Prezzi e regole» e «Che tipo di offerta?»; il loro conto Stripe è a metà
   (Account → Pagamenti).
 - [ ] **Guru** — creare un utente titolare; provare il modulo contatti (`gurumanagement.it/p/contatti`

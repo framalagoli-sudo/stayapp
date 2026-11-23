@@ -7,7 +7,8 @@ import { useAzienda } from '../../../context/AziendaContext'
 import { oraLocale } from '../../../lib/fuso'
 import { postiEvento } from '@/lib/posti-evento'
 import StatoPagamento from '../StatoPagamento'
-import { gruppoPrenotazione, incassatoOnline, postoOfferto } from '@/lib/gruppi-prenotazioni-evento'
+import { gruppoPrenotazione, incassatoOnline, postoOfferto, occupaPosto } from '@/lib/gruppi-prenotazioni-evento'
+import { scelteDi, riassuntoScelte, occupatiPerOpzione } from '@/lib/opzioni-evento'
 import { puoChiederePagamento, linkInCorso } from '@/lib/stato-prenotazione'
 import ChiediPagamento from '../ChiediPagamento'
 
@@ -137,20 +138,55 @@ const STATUS_OPTIONS = [
 // trattativa, e la prenotazione tornerebbe sul quaderno — che è il posto da cui
 // la stiamo togliendo.
 //
+// Quante di ogni opzione (migration 148), per chi segna o corregge dal pannello.
+// Il limite è quello del titolare: i posti tenuti per il telefono sono suoi.
+// `mie` = quante ne occupa già la prenotazione che si sta correggendo: tornano
+// disponibili per lei.
+function QuanteOpzioni({ evento, quante, onCambia, mie = {} }) {
+  const occupati = evento.opzioni_prenotate || {}
+  const tasto = { width: 30, height: 30, borderRadius: '50%', border: '1px solid #ccc', background: '#fff', cursor: 'pointer', fontSize: 17, lineHeight: 1, padding: 0 }
+  return (
+    <div data-quante-opzioni style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gap: 6, marginBottom: 10 }}>
+      {(evento.packages || []).map(o => {
+        const n = quante[o.id] || 0
+        const disponibili = o.posti ? Math.max(0, o.posti - (occupati[o.id] || 0) + (mie[o.id] || 0)) : null
+        return (
+          <div key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', border: '1px solid #e2e5ea', borderRadius: 8, background: n > 0 ? '#f0f4ff' : '#fff' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a2e', overflowWrap: 'anywhere' }}>{o.name}</div>
+              <div style={{ fontSize: 12, color: '#777' }}>€{Number(o.price) || 0}{disponibili != null && <> · {disponibili === 0 ? 'esaurita' : `ne restano ${disponibili}`}</>}</div>
+            </div>
+            <button type="button" aria-label={`Uno in meno: ${o.name}`} disabled={n === 0} onClick={() => onCambia(o.id, n - 1)} style={{ ...tasto, opacity: n === 0 ? 0.4 : 1 }}>−</button>
+            <span style={{ minWidth: 18, textAlign: 'center', fontWeight: 700 }}>{n}</span>
+            <button type="button" aria-label={`Uno in più: ${o.name}`} disabled={disponibili != null && n >= disponibili} onClick={() => onCambia(o.id, n + 1)} style={{ ...tasto, opacity: disponibili != null && n >= disponibili ? 0.4 : 1 }}>+</button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Le quantità come le vuole il server: solo id e quantità.
+const sceltePerServer = quante => Object.entries(quante).filter(([, n]) => n > 0).map(([id, n]) => ({ id, quantita: n }))
+
 // ⚠️ Definito fuori dalla pagina: dentro cambierebbe identità a ogni render e
 // React smonterebbe i campi mentre ci si scrive.
-function ModuloTelefono({ eventoId, liberi, onChiudi, onFatta }) {
+function ModuloTelefono({ eventoId, evento, liberi, onChiudi, onFatta }) {
   const [dati, setDati] = useState({ guest_name: '', guest_phone: '', guest_email: '', seats: 1, notes: '' })
   const [inCorso, setInCorso] = useState(false)
   const [errore, setErrore] = useState('')
+  const conOpzioni = (evento?.packages || []).length > 0
+  const [quante, setQuante] = useState({})
   const campo = (k, v) => setDati(d => ({ ...d, [k]: v }))
 
   async function salva() {
     if (!dati.guest_name.trim()) { setErrore('Serve almeno il nome'); return }
+    const scelte = conOpzioni ? sceltePerServer(quante) : null
+    if (conOpzioni && !scelte.length) { setErrore('Indica quanti posti, per almeno un’opzione.'); return }
     setInCorso(true); setErrore('')
     try {
       const creata = await apiFetch(`/api/eventi/${eventoId}/bookings`, {
-        method: 'POST', body: JSON.stringify(dati),
+        method: 'POST', body: JSON.stringify(conOpzioni ? { ...dati, scelte } : dati),
       })
       onFatta(creata)
     } catch (e) { setErrore(e.message); setInCorso(false) }
@@ -164,7 +200,7 @@ function ModuloTelefono({ eventoId, liberi, onChiudi, onFatta }) {
       </div>
       <p style={{ margin: '0 0 14px', fontSize: 13, color: '#888', lineHeight: 1.6 }}>
         Basta il nome. Il resto se ce l'hai — telefono ed email servono solo se vuoi poterlo avvisare.
-        {liberi !== null && liberi !== undefined && <> Restano <strong>{liberi}</strong> posti.</>}
+        {!conOpzioni && liberi !== null && liberi !== undefined && <> Restano <strong>{liberi}</strong> posti.</>}
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 10, marginBottom: 10 }}>
         <input autoFocus value={dati.guest_name} onChange={e => campo('guest_name', e.target.value)}
@@ -173,9 +209,12 @@ function ModuloTelefono({ eventoId, liberi, onChiudi, onFatta }) {
           placeholder="Telefono" style={campoStile} />
         <input value={dati.guest_email} onChange={e => campo('guest_email', e.target.value)}
           placeholder="Email" style={campoStile} />
-        <input type="number" min="1" value={dati.seats} onChange={e => campo('seats', Math.max(1, Number(e.target.value) || 1))}
-          placeholder="Persone" style={campoStile} />
+        {!conOpzioni && (
+          <input type="number" min="1" value={dati.seats} onChange={e => campo('seats', Math.max(1, Number(e.target.value) || 1))}
+            placeholder="Persone" style={campoStile} />
+        )}
       </div>
+      {conOpzioni && <QuanteOpzioni evento={evento} quante={quante} onCambia={(id, n) => setQuante(q => ({ ...q, [id]: Math.max(0, n) }))} />}
       <input value={dati.notes} onChange={e => campo('notes', e.target.value)}
         placeholder="Note (allergie, tavolo, chi lo conosce…)" style={{ ...campoStile, width: '100%', marginBottom: 12 }} />
       {errore && <p style={{ margin: '0 0 10px', fontSize: 13, color: '#c53030' }}>{errore}</p>}
@@ -207,23 +246,31 @@ const campoStile = { padding: '9px 12px', border: '1px solid #ddd', borderRadius
 //
 // ⚠️ Definito FUORI dalla pagina: dentro cambierebbe identità a ogni render e
 // React smonterebbe i campi mentre ci si scrive (nota 22).
-function ModuloModifica({ b, liberi, onChiudi, onFatta }) {
+function ModuloModifica({ b, evento, liberi, onChiudi, onFatta }) {
   const [dati, setDati] = useState({
     guest_name: b.guest_name || '', guest_email: b.guest_email || '',
     guest_phone: b.guest_phone || '', seats: b.seats || 1, notes: b.notes || '',
   })
   const [inCorso, setInCorso] = useState(false)
   const [errore, setErrore] = useState('')
+  // Con le opzioni si correggono le quantità di ognuna (migration 148).
+  const conOpzioni = (evento?.packages || []).length > 0
+  const iniziali = Object.fromEntries(scelteDi(b).map(s => [s.id, Number(s.quantita) || 0]))
+  const [quante, setQuante] = useState(iniziali)
   const campo = (k, v) => setDati(d => ({ ...d, [k]: v }))
-  const delta = (Number(dati.seats) || 1) - (b.seats || 1)
+  const postiOra = conOpzioni ? Object.values(quante).reduce((s, n) => s + n, 0) : (Number(dati.seats) || 1)
+  const delta = postiOra - (b.seats || 1)
   const pagata = b.pagamento_stato === 'pagato'
 
   async function salva() {
     if (!dati.guest_name.trim()) { setErrore('Serve almeno il nome'); return }
+    if (conOpzioni && !postiOra) { setErrore('Almeno un posto: per liberarli tutti usa «Annulla prenotazione».'); return }
     setInCorso(true); setErrore('')
     try {
+      // Con le opzioni i posti li dicono le quantità: il numero solo non si manda.
+      const resto = { ...dati }; delete resto.seats
       const aggiornata = await apiFetch(`/api/eventi/bookings/${b.id}`, {
-        method: 'PATCH', body: JSON.stringify(dati),
+        method: 'PATCH', body: JSON.stringify(conOpzioni ? { ...resto, scelte: sceltePerServer(quante) } : dati),
       })
       onFatta(aggiornata)
     } catch (e) { setErrore(e.message); setInCorso(false) }
@@ -236,9 +283,15 @@ function ModuloModifica({ b, liberi, onChiudi, onFatta }) {
         <input value={dati.guest_name} onChange={e => campo('guest_name', e.target.value)} placeholder="Nome *" style={campoStile} />
         <input value={dati.guest_email} onChange={e => campo('guest_email', e.target.value)} placeholder="Email" style={campoStile} />
         <input value={dati.guest_phone} onChange={e => campo('guest_phone', e.target.value)} placeholder="Telefono" style={campoStile} />
-        <input type="number" min="1" value={dati.seats}
-          onChange={e => campo('seats', Math.max(1, Number(e.target.value) || 1))} placeholder="Posti" style={campoStile} />
+        {!conOpzioni && (
+          <input type="number" min="1" value={dati.seats}
+            onChange={e => campo('seats', Math.max(1, Number(e.target.value) || 1))} placeholder="Posti" style={campoStile} />
+        )}
       </div>
+      {conOpzioni && (
+        <QuanteOpzioni evento={evento} quante={quante} mie={occupaPosto(b) ? iniziali : {}}
+          onCambia={(id, n) => setQuante(q => ({ ...q, [id]: Math.max(0, n) }))} />
+      )}
       <input value={dati.notes} onChange={e => campo('notes', e.target.value)}
         placeholder="Note (allergie, tavolo, chi lo conosce…)" style={{ ...campoStile, width: '100%', marginBottom: 10 }} />
 
@@ -247,7 +300,7 @@ function ModuloModifica({ b, liberi, onChiudi, onFatta }) {
       {delta !== 0 && (
         <p style={{ margin: '0 0 10px', fontSize: 12.5, color: delta > 0 ? '#8a6d1f' : '#155724', lineHeight: 1.6 }}>
           {delta > 0
-            ? <>Stai aggiungendo <strong>{delta}</strong> {delta === 1 ? 'posto' : 'posti'}{liberi != null && <> · ne restano {liberi} liberi</>}.</>
+            ? <>Stai aggiungendo <strong>{delta}</strong> {delta === 1 ? 'posto' : 'posti'}{!conOpzioni && liberi != null && <> · ne restano {liberi} liberi</>}.</>
             : <>Si liberano <strong>{-delta}</strong> {(-delta) === 1 ? 'posto' : 'posti'}, disponibili subito per altri.</>}
         </p>
       )}
@@ -557,7 +610,12 @@ export default function EventoPrenotazioniPage() {
                 <Users size={11} strokeWidth={1.5} /> {b.seats} {b.seats === 1 ? 'posto' : 'posti'}
               </span>
             </div>
-            {pkg && (
+            {/* Con le opzioni (migration 148): quante di ognuna — è quello che serve in cucina. */}
+            {b.scelte?.length ? (
+              <div data-scelte-riga style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12.5, color: '#333', marginBottom: 4, overflowWrap: 'anywhere' }}>
+                <Package size={11} strokeWidth={1.5} style={{ flexShrink: 0 }} /> <strong>{riassuntoScelte(b.scelte)}</strong>
+              </div>
+            ) : pkg && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#555', marginBottom: 4 }}>
                 <Package size={11} strokeWidth={1.5} /> Pacchetto: <strong>{pkg.name}</strong>
               </div>
@@ -583,7 +641,7 @@ export default function EventoPrenotazioniPage() {
 
         {renderAzioni(b)}
         {modificaId === b.id && (
-          <ModuloModifica b={b} liberi={liberi}
+          <ModuloModifica b={b} evento={evento} liberi={liberi}
             onChiudi={() => setModificaId(null)} onFatta={dopoModifica} />
         )}
       </div>
@@ -690,6 +748,7 @@ export default function EventoPrenotazioniPage() {
       {nuova && (
         <ModuloTelefono
           eventoId={id}
+          evento={evento}
           liberi={liberi}
           onChiudi={() => setNuova(false)}
           onFatta={async (creata) => {
@@ -753,6 +812,35 @@ export default function EventoPrenotazioniPage() {
           </div>
         ))}
       </div>
+
+      {/* Le opzioni, una per una (migration 148): «Cena & spettacolo 24/40 ·
+          3 in lista». Per chi prepara la serata è il numero che conta: quante
+          cene servire, quanti al bancone. */}
+      {(evento.packages || []).length > 0 && (() => {
+        // Contati dalle righe a schermo, con la regola del server: così questi
+        // numeri e «Posti presi» qui sopra non possono dire due cose diverse.
+        const occupati = occupatiPerOpzione(bookings)
+        const inLista = {}
+        for (const b of inAttesa) for (const s of scelteDi(b)) inLista[s.id] = (inLista[s.id] || 0) + (Number(s.quantita) || 0)
+        return (
+          <div data-conto-opzioni style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginTop: -12, marginBottom: 24 }}>
+            {evento.packages.map(o => {
+              const n = occupati[o.id] || 0
+              return (
+                <div key={o.id} style={{ background: '#fff', borderRadius: 12, padding: '12px 16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#555', overflowWrap: 'anywhere' }}>{o.name}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#1a1a2e' }}>{o.posti ? `${n} / ${o.posti}` : n}</div>
+                  <div style={{ fontSize: 12, color: '#888' }}>
+                    {!o.posti ? 'senza limite' : n >= o.posti ? 'esaurita' : `ancora ${o.posti - n} liberi`}
+                    {o.posti_riservati > 0 && <> · {o.posti_riservati} per il telefono</>}
+                    {inLista[o.id] > 0 && <> · {inLista[o.id]} in lista</>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
 
       {/* Bookings list */}
       {bookings.length === 0 ? (

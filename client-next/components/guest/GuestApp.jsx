@@ -20,6 +20,7 @@ import { t as tr } from '@/lib/i18n'
 import { oraLocale } from '@/lib/fuso'
 import RequestForm from './RequestForm'
 import CampoPosti, { numeroPosti } from './CampoPosti'
+import SceltaOpzioni from './SceltaOpzioni'
 import RiepilogoPrenotazione from './RiepilogoPrenotazione'
 import SpuntaPromozioni from './SpuntaPromozioni'
 import ServicesTab from './ServicesTab'
@@ -709,7 +710,7 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
             </div>
             {ev.description && <p style={{ margin: '0 0 10px', fontSize: 13, color: subText, lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} {...ricco(ev.description)} />}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              {prezzoDaMostrare(ev, { gratuito: tr('free', lang) }) && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzoDaMostrare(ev, { gratuito: tr('free', lang) })}</span>}
+              {prezzoDaMostrare(ev, { gratuito: tr('free', lang), da: lang === 'en' ? 'from' : 'da' }) && <span style={{ fontSize: 18, fontWeight: 800, color: primary }}>{prezzoDaMostrare(ev, { gratuito: tr('free', lang), da: lang === 'en' ? 'from' : 'da' })}</span>}
               <span style={{ fontSize: 12, fontWeight: 600, color: primary }}>{tr('details_arrow', lang)}</span>
             </div>
           </div>
@@ -722,6 +723,9 @@ function EventiTab({ eventi, onOpen, primary, textColor, subText, isDark, radius
 // ─── EventoDetailView — pagina dettaglio evento dentro la PWA (nessun overlay) ──
 function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColor, subText, isDark, radius, lang = 'it' }) {
   const [pkgId,      setPkgId]      = useState(evento.packages?.length === 1 ? evento.packages[0].id : '')
+  // Le opzioni dell'evento (migration 148): quanti posti per ognuna.
+  const conOpzioni = (evento.packages || []).length > 0
+  const [quante,     setQuante]     = useState(evento.packages?.length === 1 && evento.packages[0].posti_online !== 0 ? { [evento.packages[0].id]: 1 } : {})
   // Testo, non numero: il campo deve poter restare vuoto mentre si scrive.
   const [seats,      setSeats]      = useState('1')
   // Il riepilogo da leggere prima di andare a pagare (null = non ancora chiesto).
@@ -743,15 +747,19 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
     if (!guestEmail.trim()) { setBookErr('Inserisci la tua email'); return }
     if (telefonoServe && !guestPhone.trim()) { setBookErr('Per questo evento serve un numero di telefono'); return }
     if (!privacyOk) { setBookErr('Serve il consenso al trattamento dei dati.'); return }
-    const posti = numeroPosti(seats)
+    // Con le opzioni contano le quantità scelte; al server solo id e quantità.
+    const scelte = conOpzioni ? Object.entries(quante).filter(([, n]) => n > 0).map(([id, n]) => ({ id, quantita: n })) : null
+    if (conOpzioni && !scelte.length) { setBookErr(lang === 'en' ? 'Choose at least one seat.' : 'Scegli almeno un posto.'); return }
+    const posti = conOpzioni ? scelte.reduce((t, x) => t + x.quantita, 0) : numeroPosti(seats)
     if (!posti) { setBookErr(lang === 'en' ? 'Tell us how many people' : 'Indica per quante persone vuoi prenotare'); return }
+    const richiesta = conOpzioni ? { scelte } : { package_id: pkgId || null, seats: posti }
     setBooking(true); setBookErr('')
     try {
       // Come nella pagina dell'evento: se c'è da pagare, prima il riepilogo —
       // e i posti si prendono solo alla conferma.
       if (!riepilogo) {
         const conti = await guestFetch(`/api/guest/eventi/${evento.id}/riepilogo`, {
-          method: 'POST', body: JSON.stringify({ package_id: pkgId || null, seats: posti }),
+          method: 'POST', body: JSON.stringify(richiesta),
         })
         if (conti?.da_pagare > 0) { setRiepilogo(conti); return }
       }
@@ -761,7 +769,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
           // rispondeva 400 a OGNI prenotazione fatta dall'app del QR, senza che
           // l'ospite avesse una spunta da mettere. Rotta in silenzio per un mese.
           body: JSON.stringify({ guest_name: guestName, guest_email: guestEmail,
-            guest_phone: guestPhone || null, package_id: pkgId || null, seats: posti,
+            guest_phone: guestPhone || null, ...richiesta,
             notes: notes.trim() || null, privacy_accettata: privacyOk, promozioni, lang }),
       })
       // ⛔ Il link della cassa veniva ignorato: chi prenotava da qui un evento
@@ -807,25 +815,17 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
 
         {/* Prenotazione */}
         <div style={{ background: cardBg, borderRadius: radius || 14, padding: 16, border: `1px solid ${border}` }}>
-          {(evento.packages || []).length > 0 && (
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontWeight: 700, fontSize: 13, color: textColor, marginBottom: 8 }}>{tr('choose_package', lang)}</div>
-              {evento.packages.map(pkg => (
-                <label key={pkg.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: radius || 10, border: `1.5px solid ${pkgId === pkg.id ? primary : (isDark ? 'rgba(255,255,255,0.1)' : '#e0e0e0')}`, marginBottom: 8, cursor: 'pointer', background: pkgId === pkg.id ? `${primary}18` : 'transparent' }}>
-                  <input type="radio" name="pkg" value={pkg.id} checked={pkgId === pkg.id} onChange={() => { setPkgId(pkg.id); setRiepilogo(null) }} style={{ accentColor: primary }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: textColor }}>{pkg.name}</div>
-                    {pkg.description && <div style={{ fontSize: 12, color: subText }}>{pkg.description}</div>}
-                  </div>
-                  <div style={{ fontWeight: 700, color: primary }}>{pkg.price > 0 ? `€${pkg.price}` : tr('free', lang)}</div>
-                </label>
-              ))}
-            </div>
+          {conOpzioni && !done && !riepilogo && (
+            <SceltaOpzioni opzioni={evento.packages} quante={quante} lang={lang}
+              onCambia={(id, n) => { setQuante(q => ({ ...q, [id]: Math.max(0, n) })); setRiepilogo(null) }}
+              colori={{ testo: textColor, tenue: subText, bordo: isDark ? 'rgba(255,255,255,0.15)' : '#e0e0e0', primario: primary, sfondoScelto: `${primary}18` }} />
           )}
 
+          {!conOpzioni && (
           <div style={{ fontWeight: 800, fontSize: 22, color: primary, marginBottom: 16 }}>
-            {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); return prezzoPersona(evento, pkg?.price, { gratuito: tr('free', lang), perPersona: lang === 'en' ? '/ person' : '/ persona' }) })()}
+            {(() => { const pkg = (evento.packages || []).find(p => p.id === pkgId); return prezzoPersona(evento, pkg?.price, { gratuito: tr('free', lang), perPersona: lang === 'en' ? '/ person' : '/ persona', da: lang === 'en' ? 'from' : 'da' }) })()}
           </div>
+          )}
           {evento.comprende && (
             <div data-comprende style={{ background: `color-mix(in srgb, ${primary} 8%, transparent)`, borderLeft: `3px solid ${primary}`, borderRadius: 10, padding: '10px 12px', margin: '-6px 0 16px' }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: subText, marginBottom: 3 }}>{lang === 'en' ? 'The price includes' : 'Il prezzo comprende'}</div>
@@ -841,7 +841,7 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
             </div>
           ) : riepilogo ? (
             <RiepilogoPrenotazione riepilogo={riepilogo} titoloEvento={evento.title} quando={fmtDate(evento)} lang={lang}
-              comprende={cosaComprende(evento, (evento.packages || []).find(p => p.id === pkgId))}
+              comprende={cosaComprende(evento, conOpzioni ? null : (evento.packages || []).find(p => p.id === pkgId))}
               inCorso={booking} errore={bookErr} onConferma={handleBook} onModifica={() => { setRiepilogo(null); setBookErr('') }}
               colori={{ testo: textColor, tenue: subText, bordo: border, primario: primary, suPrimario: readableOn('#ffffff', primary, '#1a1a2e'), raggio: radius || 12 }} />
           ) : (
@@ -850,10 +850,10 @@ function EventoDetailView({ evento, onBack, privacyUrl = null, primary, textColo
               <input value={guestName} onChange={e => setGuestName(e.target.value)} placeholder={tr('name_full_req', lang)} style={inp} />
               <input value={guestEmail} onChange={e => setGuestEmail(e.target.value)} placeholder={tr('email_req', lang)} type="email" style={inp} />
               <input value={guestPhone} onChange={e => setGuestPhone(e.target.value)} placeholder={tr(telefonoServe ? 'phone_req' : 'phone_opt', lang)} type="tel" style={inp} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              {!conOpzioni && <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <label htmlFor="posti-evento" style={{ fontSize: 13, color: subText }}>{tr('seats_label', lang)}</label>
                 <CampoPosti id="posti-evento" value={seats} onChange={setSeats} style={{ ...inp, width: 70, textAlign: 'center', marginBottom: 0 }} />
-              </div>
+              </div>}
               <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2} maxLength={500}
                 placeholder={tr('notes_opt', lang)} style={{ ...inp, resize: 'vertical', fontFamily: 'inherit' }} />
               {/* Senza questa spunta la prenotazione NON parte: i dati di una

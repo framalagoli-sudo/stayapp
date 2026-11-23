@@ -11,6 +11,7 @@ import { after } from 'next/server'
 import { testoConsensoPromozioni } from '@/lib/consenso-promozioni'
 import { baseLink } from '@/lib/evento-titolare'
 import { emailValida } from '@/lib/contatti-import'
+import { haOpzioni, postiOpzione, leggiScelte, MAX_QUANTITA } from '@/lib/opzioni-evento'
 
 // «Avvisatemi se si libera un posto.»
 //
@@ -52,7 +53,7 @@ export async function POST(request, props) {
       // posti tenuti per il telefono siano ancora vendibili e risponde «ci
       // sono ancora posti» a chi il sito ha appena mandato via. Trovato
       // provando, non leggendo.
-      .select('id, title, date_start, date_end, location, seats_total, seats_booked, posti_riservati, lista_attesa, prenotazioni_chiuse, entity_id, azienda_id, aziende(fuso_orario)')
+      .select('id, title, date_start, date_end, location, seats_total, seats_booked, posti_riservati, packages, opzioni_prenotate, acconto_percentuale, lista_attesa, prenotazioni_chiuse, entity_id, azienda_id, aziende(fuso_orario)')
       .eq('id', params.id).eq('published', true).eq('active', true).maybeSingle()
     if (!evento) return Response.json({ error: 'Evento non trovato' }, { status: 404 })
     // A evento finito non si libera più nessun posto: la lista resterebbe
@@ -64,18 +65,34 @@ export async function POST(request, props) {
     // persona resterebbe ad aspettare una chiamata mentre poteva prenotare e
     // basta — ed è il genere di cosa che fa sembrare rotto un sistema che
     // funziona.
-    const pieno = postiEvento(evento).liberiOnline === 0
-    if (!evento.prenotazioni_chiuse && !pieno) {
-      return Response.json({ error: 'Ci sono ancora posti: puoi prenotare direttamente.', posti_liberi: true }, { status: 400 })
+    const posti = Math.min(MAX_QUANTITA, Math.max(1, parseInt(seats) || 1))
+
+    // Con le opzioni la lista è per opzione (migration 148): ci si mette in fila
+    // per la cena esaurita mentre gli ingressi si prenotano normalmente.
+    let scelte = null, opzione = null
+    if (haOpzioni(evento)) {
+      opzione = (evento.packages || []).find(o => o.id === corpo.opzione)
+      if (!opzione) return Response.json({ error: 'Scegli per quale proposta vuoi metterti in lista.' }, { status: 400 })
+      const p = postiOpzione(opzione, (evento.opzioni_prenotate || {})[opzione.id])
+      if (!evento.prenotazioni_chiuse && (p.illimitato || p.liberiOnline > 0)) {
+        return Response.json({ error: `Per «${opzione.name}» ci sono ancora posti: puoi prenotare direttamente.`, posti_liberi: true }, { status: 400 })
+      }
+      const letto = leggiScelte(evento, [{ id: opzione.id, quantita: posti }])
+      if (letto.errore) return Response.json({ error: letto.errore }, { status: 400 })
+      scelte = letto.scelte
+    } else {
+      const pieno = postiEvento(evento).liberiOnline === 0
+      if (!evento.prenotazioni_chiuse && !pieno) {
+        return Response.json({ error: 'Ci sono ancora posti: puoi prenotare direttamente.', posti_liberi: true }, { status: 400 })
+      }
     }
 
-    const posti = Math.max(1, parseInt(seats) || 1)
-
-    // Due volte la stessa persona sullo stesso evento non serve a nessuno: la
-    // seconda iscrizione non è un errore, è la stessa richiesta.
-    const { data: esistente } = await supabaseAdmin.from('event_bookings')
-      .select('id').eq('event_id', params.id).eq('guest_email', guest_email.trim())
-      .eq('status', 'waitlist').maybeSingle()
+    // Due volte la stessa persona sullo stesso evento (e la stessa opzione) non
+    // serve a nessuno: la seconda iscrizione non è un errore, è la stessa richiesta.
+    const { data: inLista } = await supabaseAdmin.from('event_bookings')
+      .select('id, scelte').eq('event_id', params.id).eq('guest_email', guest_email.trim())
+      .eq('status', 'waitlist')
+    const esistente = (inLista || []).find(b => !opzione || (b.scelte || []).some(s => s.id === opzione.id))
     if (esistente) {
       return Response.json({ gia_in_lista: true, messaggio: 'Sei già in lista: ti avvisiamo appena si libera un posto.' }, { status: 200 })
     }
@@ -86,6 +103,8 @@ export async function POST(request, props) {
       guest_email: guest_email.trim(),
       guest_phone: guest_phone?.trim() || null,
       seats: posti,
+      scelte,
+      package_id: opzione?.id || null,
       total_amount: 0,
       // ⛔ Lo stato che non occupa posti. Vedi `lib/event-seats.js`.
       status: 'waitlist',
@@ -129,6 +148,7 @@ export async function POST(request, props) {
           rows: [
             quando ? { label: 'Quando', value: quando } : null,
             evento.location ? { label: 'Dove', value: evento.location } : null,
+            opzione ? { label: 'Per', value: opzione.name } : null,
             { label: 'Posti che vorresti', value: String(posti) },
           ].filter(Boolean),
           // Chi non è più interessato si toglie da solo: così il prossimo

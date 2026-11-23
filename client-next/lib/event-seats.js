@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabase-server'
 import { occupaPosto } from './gruppi-prenotazioni-evento'
+import { occupatiPerOpzione } from './opzioni-evento'
 
 // Quanti posti sono presi davvero.
 //
@@ -18,12 +19,14 @@ import { occupaPosto } from './gruppi-prenotazioni-evento'
 export async function recomputeEventSeats(eventId) {
   if (!eventId) return 0
   const { data } = await supabaseAdmin
-    .from('event_bookings').select('seats, status, offerta_scade_il').eq('event_id', eventId)
+    .from('event_bookings').select('seats, status, offerta_scade_il, scelte, package_id').eq('event_id', eventId)
   const total = (data || [])
     .filter(b => occupaPosto(b))
     .reduce((s, b) => s + (b.seats || 1), 0)
+  // Con le opzioni anche i posti di ognuna, con la stessa regola (migration
+  // 148): le pagine pubbliche li leggono da qui senza contare le prenotazioni.
   await supabaseAdmin.from('eventi')
-    .update({ seats_booked: total, updated_at: new Date().toISOString() })
+    .update({ seats_booked: total, opzioni_prenotate: occupatiPerOpzione(data), updated_at: new Date().toISOString() })
     .eq('id', eventId)
   return total
 }

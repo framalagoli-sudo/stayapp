@@ -8,6 +8,7 @@ import { oraLocale } from './fuso'
 import { mandaConfermaEvento } from './evento-conferma'
 import { annunciaPrenotazioneEvento } from './evento-prenotato'
 import { prenotazionePagata } from './prenotazione-risorsa'
+import { contoScelte } from './opzioni-evento'
 
 // Il link di pagamento che il titolare manda a chi ha prenotato a voce.
 //
@@ -49,7 +50,7 @@ const TABELLA = { evento: 'event_bookings', risorsa: 'prenotazioni' }
 export async function leggiPrenotazione(tipo, id) {
   if (tipo === 'evento') {
     const { data: b } = await supabaseAdmin.from('event_bookings')
-      .select('id, event_id, guest_name, guest_email, guest_phone, seats, total_amount, status, pagamento_stato, pagamento_id, pagamento_richiesto_il, importo_online')
+      .select('id, event_id, guest_name, guest_email, guest_phone, seats, scelte, total_amount, status, pagamento_stato, pagamento_id, pagamento_richiesto_il, importo_online')
       .eq('id', id).maybeSingle()
     if (!b) return null
     const { data: ev } = await supabaseAdmin.from('eventi')
@@ -68,7 +69,8 @@ export async function leggiPrenotazione(tipo, id) {
       allaCassa: b.status === 'pending' && b.pagamento_stato === 'non_pagato' && !b.pagamento_richiesto_il,
       pagamento_stato: b.pagamento_stato, pagamento_id: b.pagamento_id,
       richiesto_il: b.pagamento_richiesto_il, importo_online: b.importo_online,
-      proposta: accontoDovuto(ev.acconto_percentuale, b.total_amount).dovuto || round2(b.total_amount),
+      // Con le opzioni ognuna ha la sua quota (migration 148): si somma quella.
+      proposta: (b.scelte?.length ? contoScelte(b.scelte).conto.dovuto : accontoDovuto(ev.acconto_percentuale, b.total_amount).dovuto) || round2(b.total_amount),
     }
   }
   if (tipo === 'risorsa') {

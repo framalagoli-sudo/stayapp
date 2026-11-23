@@ -3,6 +3,7 @@ import { sendEmail } from './send-email'
 import { emailTemplate } from './email-template'
 import { triggerAutomazione } from './guest-utils'
 import { oraLocale } from './fuso'
+import { riassuntoScelte } from './opzioni-evento'
 
 // Quello che succede quando una prenotazione di un evento diventa VERA:
 // l'avviso al titolare e le automazioni (promemoria prima dell'evento, grazie
@@ -26,7 +27,7 @@ function fmtData(iso, fuso) {
 export async function annunciaPrenotazioneEvento(bookingId) {
   try {
     const { data: b } = await supabaseAdmin.from('event_bookings')
-      .select('id, event_id, guest_name, guest_email, guest_phone, seats, package_id, total_amount, status')
+      .select('id, event_id, guest_name, guest_email, guest_phone, seats, package_id, scelte, total_amount, status')
       .eq('id', bookingId).maybeSingle()
     // Solo una prenotazione che occupa davvero il posto merita un annuncio.
     if (!b || b.status !== 'confirmed') return { ok: false, motivo: 'Prenotazione non confermata' }
@@ -39,7 +40,9 @@ export async function annunciaPrenotazioneEvento(bookingId) {
     const fuso = evento.aziende?.fuso_orario
     const dateStr = fmtData(evento.date_start, fuso)
     const seats = b.seats || 1
-    const pkgName = b.package_id ? ((evento.packages || []).find(p => p.id === b.package_id)?.name || '') : ''
+    // Con le opzioni (migration 148) la riga dice quante di ognuna: è quello che serve in cucina.
+    const pkgName = b.scelte?.length ? riassuntoScelte(b.scelte)
+      : b.package_id ? ((evento.packages || []).find(p => p.id === b.package_id)?.name || '') : ''
 
     // Chi avvisare: l'entità dell'evento o, se l'evento è dell'azienda, l'azienda.
     let ownerEmail = null, ownerName = null
@@ -68,7 +71,7 @@ export async function annunciaPrenotazioneEvento(bookingId) {
             { label: 'Email', value: b.guest_email },
             b.guest_phone ? { label: 'Telefono', value: b.guest_phone } : null,
             { label: 'Posti', value: String(seats) },
-            pkgName ? { label: 'Pacchetto', value: pkgName } : null,
+            pkgName ? { label: b.scelte?.length ? 'Scelte' : 'Pacchetto', value: pkgName } : null,
             { label: 'Totale', value: `€${Number(b.total_amount || 0).toFixed(2)}` },
             dateStr ? { label: 'Data evento', value: dateStr } : null,
           ].filter(Boolean),
