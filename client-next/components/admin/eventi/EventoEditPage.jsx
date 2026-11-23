@@ -126,10 +126,13 @@ export default function EventoEditPage() {
   // diventano la PRIMA opzione (non si perde niente), più una seconda da
   // scrivere. Le prenotazioni già fatte vanno nella prima (lo fa il server).
   function iniziaOpzioni() {
+    // «Cosa comprende» generale, se c'era, passa nella prima opzione: con le
+    // opzioni si scrive dentro ognuna, e non deve andare perso.
     setForm(f => ({
       ...f,
+      comprende: '',
       packages: [
-        { ...BLANK_PKG, id: crypto.randomUUID(), price: f.price, posti: f.seats_total, posti_riservati: f.posti_riservati, acconto_percentuale: f.acconto_percentuale ?? '' },
+        { ...BLANK_PKG, id: crypto.randomUUID(), price: f.price, posti: f.seats_total, posti_riservati: f.posti_riservati, acconto_percentuale: f.acconto_percentuale ?? '', description: (f.comprende || '').trim() },
         { ...BLANK_PKG, id: crypto.randomUUID(), acconto_percentuale: f.acconto_percentuale ?? '' },
       ],
     }))
@@ -214,7 +217,7 @@ export default function EventoEditPage() {
                   : <>Si paga sul posto.</>}
               </div>
               <input value={pkg.description} onChange={e => updatePkg(pkg.id, { description: e.target.value })} maxLength={300}
-                placeholder="Cosa comprende (es. cena con antipasto, primo e dolce + spettacolo)" style={{ ...campo, marginBottom: 8 }} />
+                placeholder="Cosa comprende (es. cena con antipasto, primo e dolce + spettacolo). Come si paga lo scriviamo noi." style={{ ...campo, marginBottom: 8 }} />
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {INCLUDES_OPTIONS.map(({ key, label }) => {
                   const active = pkg.includes.includes(key)
@@ -465,6 +468,15 @@ export default function EventoEditPage() {
               spettacolo lo diceva, se andava bene, il titolo (Garage 22, 13/11).
               Lo scrive il locale: dedurlo dalla descrizione è la trappola del
               «Gratuito». Si legge anche nel riepilogo, alla cassa e nella conferma. */}
+          {/* Con le opzioni «cosa comprende» si scrive in ognuna: una riga
+              generale finirebbe anche sotto l'opzione che non la comprende
+              (la cena scritta sulla ricevuta di chi ha preso il drink). */}
+          {form.packages.length > 0 ? (
+            <div data-comprende-nelle-opzioni style={{ marginTop: 18, padding: '12px 14px', background: '#f6f7fb', borderRadius: 8, fontSize: 13, color: '#555', lineHeight: 1.55 }}>
+              <strong>Cosa comprende il prezzo</strong>: con più proposte si scrive dentro ognuna, in «Opzioni e prezzi» qui sotto.
+              Chi prenota legge quella dell’opzione che sceglie.
+            </div>
+          ) : (<>
           <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#444', margin: '18px 0 4px' }}>
             Cosa comprende il prezzo
           </label>
@@ -475,6 +487,7 @@ export default function EventoEditPage() {
             Una riga, sotto il prezzo. La legge anche chi paga, prima della cassa e nell’email di conferma.
             Se lo lasci vuoto non compare niente. {form.comprende.length}/160
           </div>
+          </>)}
         </div>
 
         {/* Il pulsante di prenotazione e le sue condizioni */}

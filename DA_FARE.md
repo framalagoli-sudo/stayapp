@@ -146,7 +146,9 @@
 ### C3. Clienti
 - [ ] **Garage 22** — dire che negli eventi c'è «Più proposte con prezzi diversi» (cena 30 € + ingresso
   con drink 15 €, posti e quota per ognuna, prenotazioni miste, lista d'attesa per opzione), e che le
-  prenotazioni già fatte finiscono nella prima opzione. (`CLAUDE.md` nota 94)
+  prenotazioni già fatte finiscono nella prima opzione. (`CLAUDE.md` nota 94) Le stanno già usando (serata De Cicco &
+  Simoniello, 23/11): dalle due descrizioni si può togliere «Paga ora il 20%…» / «paghi la sera…», ora lo
+  scrive la pagina da sola sotto ogni prezzo.
 - [ ] **Automax** — spiegare «Prezzi e regole» e «Che tipo di offerta?»; il loro conto Stripe è a metà
   (Account → Pagamenti).
 - [ ] **Guru** — creare un utente titolare; provare il modulo contatti (`gurumanagement.it/p/contatti`

@@ -2,7 +2,8 @@
 // pulizia di quello che arriva dal pannello, conto con quote per opzione, posti
 // per opzione (online e titolare), cosa esce al pubblico. Casi ostili compresi.
 // Uso: cd tests && node probe-opzioni-regole.mjs
-import { opzioniPulite, derivatiDaOpzioni, leggiScelte, contoScelte, rifiutoScelte, occupatiPerOpzione, opzioniPubbliche, riassuntoScelte } from '../client-next/lib/opzioni-evento.js'
+import { opzioniPulite, derivatiDaOpzioni, leggiScelte, contoScelte, rifiutoScelte, occupatiPerOpzione, opzioniPubbliche, riassuntoScelte, fraseQuota } from '../client-next/lib/opzioni-evento.js'
+import { cosaComprende } from '../client-next/lib/prezzo-evento.js'
 let ko = 0
 const ok = (c, m, x = '') => { console.log((c ? '  ✓ ' : '  ✗ ') + m + (c ? '' : '  → ' + JSON.stringify(x))); if (!c) ko++ }
 
@@ -57,7 +58,14 @@ ok(rifiutoScelte(ev, [{ id: 'cena', quantita: 1 }], { cena: 30 })?.error.include
 const pub = opzioniPubbliche({ packages: ev.packages, opzioni_prenotate: { cena: 30, bar: 5 } })
 ok(pub[0].posti_online === 0 && pub[1].posti_online === 25, 'pubblico: posti ancora prenotabili', pub)
 const chiavi = Object.keys(pub[0]).sort().join(',')
-ok(chiavi === 'description,id,includes,name,posti_online,price', 'pubblico: niente capienza, telefono o quota', chiavi)
+ok(chiavi === 'description,id,includes,name,posti_online,price,quota', 'pubblico: niente capienza né posti per il telefono', chiavi)
+ok(pub[0].quota === 0 && pub[1].quota === 0, 'senza conto che incassa la quota è 0 (si paga sul posto)', pub)
+const conConto = opzioniPubbliche({ packages: ev.packages, acconto_percentuale: 20 }, { incassa: true })
+ok(conConto[0].quota === 100 && conConto[1].quota === 0, 'con il conto: la quota di ogni opzione', conConto)
+ok(opzioniPubbliche({ packages: [{ id: 'z', name: 'Z', price: 10, acconto_percentuale: null }], acconto_percentuale: 30 }, { incassa: true })[0].quota === 30, 'quota vuota = quella dell’evento')
+ok(fraseQuota(0) === 'Si paga sul posto' && fraseQuota(100) === 'Si paga alla prenotazione' && fraseQuota(20) === '20% alla prenotazione, il resto sul posto', 'la frase della quota')
+ok(cosaComprende({ comprende: 'Cena', packages: ev.packages }, null) === '', 'con le opzioni la riga generale «cosa comprende» non esce')
+ok(cosaComprende({ comprende: 'Cena', packages: [] }, null) === 'Cena', 'senza opzioni sì, come prima')
 ok(riassuntoScelte(l.scelte) === '1 × Cena & spettacolo · 2 × Ingresso + drink', 'riassunto leggibile', riassuntoScelte(l.scelte))
 console.log(ko ? `\n${ko} DA GUARDARE` : '\ntutto verde')
 process.exit(ko ? 1 : 0)

@@ -303,7 +303,7 @@ export async function prendiPosto(token, origine) {
       const esito = await creaCheckout({
         aziendaId: evento.azienda_id,
         righe: righe
-          ? righe.map(r => ({ nome: `${evento.title} — ${r.nome}`, importo: r.importo, quantita: r.quantita, immagine: evento.cover_url || undefined, descrizione: cosaComprende({ comprende: evento.comprende }, { description: (evento.packages || []).find(p => p.id === r.id)?.description }) }))
+          ? righe.map(r => ({ nome: `${evento.title} — ${r.nome}`, importo: r.importo, quantita: r.quantita, immagine: evento.cover_url || undefined, descrizione: (evento.packages || []).find(p => p.id === r.id)?.description || undefined }))
           : [{ nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`, importo: conto.dovuto, quantita: 1, immagine: evento.cover_url || undefined, descrizione: cosaComprende(evento, (evento.packages || []).find(p => p.id === b.package_id)) }],
         email: b.guest_email,
         successUrl: `${base}/checkout/successo?session_id={CHECKOUT_SESSION_ID}`,

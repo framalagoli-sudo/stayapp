@@ -44,14 +44,16 @@ export function postiEvento(evento) {
 // sottrazione, e i riservati dicono quanti posti il locale tiene per il
 // telefono — un dato suo, non dei visitatori (segnalato il 30/09/2026 dalla
 // sonda delle colonne pubbliche). Le route pubbliche passano tutte da qui.
-export function postiPubblici(evento) {
-  const { seats_total, seats_booked, posti_riservati, opzioni_prenotate, packages, ...resto } = evento || {}
+// `incassa` = il locale ha un conto che incassa: serve a dire la quota vera
+// delle opzioni (senza conto si paga tutto sul posto).
+export function postiPubblici(evento, { incassa = false } = {}) {
+  const { seats_total, seats_booked, posti_riservati, opzioni_prenotate, packages, acconto_percentuale, ...resto } = evento || {}
   const p = postiEvento({ seats_total, seats_booked, posti_riservati })
   // Le opzioni hanno posti e posti per il telefono loro: escono solo come
   // «quanti se ne possono ancora prenotare», con la stessa regola.
   return {
     ...resto,
-    packages: opzioniPubbliche({ packages, opzioni_prenotate }),
+    packages: opzioniPubbliche({ packages, opzioni_prenotate, acconto_percentuale }, { incassa }),
     posti_online: p.illimitato ? null : p.liberiOnline,
   }
 }

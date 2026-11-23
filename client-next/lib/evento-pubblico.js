@@ -3,6 +3,8 @@ import { supabaseAdmin } from './supabase-server'
 import { localizeEntity } from './translate'
 import { getAziendaLegale } from './guest-data'
 import { trovaEvento } from './evento-indirizzo'
+import { puoIncassare } from './checkout'
+import { haOpzioni } from './opzioni-evento'
 
 // I dati pubblici di un evento: quelli che vede chi apre la pagina.
 //
@@ -20,7 +22,7 @@ import { trovaEvento } from './evento-indirizzo'
 export const CAMPI_EVENTO = [
   'id', 'slug', 'title', 'description', 'cover_url', 'formato_cover', 'cover_focal',
   'cta_label', 'cta_condizioni', 'comprende', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
-  'date_start', 'date_end', 'location', 'price', 'seats_total', 'seats_booked', 'posti_riservati', 'packages', 'opzioni_prenotate',
+  'date_start', 'date_end', 'location', 'price', 'seats_total', 'seats_booked', 'posti_riservati', 'packages', 'opzioni_prenotate', 'acconto_percentuale',
   // ⚠️ Senza queste due la pagina non saprebbe che le prenotazioni sono chiuse:
   // si salverebbe nel pannello e non si vedrebbe sul sito — è già successo.
   'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'lista_attesa',
@@ -94,5 +96,7 @@ export async function datiEventoPubblico(id, lang = 'it', evento = null) {
   // `lingua` dice in che lingua sono questi dati: la pagina la confronta con
   // quella richiesta, e ripesca solo se non combaciano.
   // I posti escono solo come «quanti se ne possono prenotare»: vedi postiPubblici.
-  return { ...postiPubblici(pubblico), lingua: lang, fuso: aziende?.fuso_orario || null, sito }
+  // Con le opzioni la pagina scrive la quota di ognuna: vera solo se la cassa si apre.
+  const incassa = haOpzioni(data) && azienda_id ? await puoIncassare(azienda_id) : false
+  return { ...postiPubblici(pubblico, { incassa }), lingua: lang, fuso: aziende?.fuso_orario || null, sito }
 }

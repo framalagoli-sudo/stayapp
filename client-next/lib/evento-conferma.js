@@ -92,7 +92,7 @@ export async function mandaConfermaEvento(bookingId) {
             b.scelte?.length ? { label: 'Hai prenotato', value: riassuntoScelte(b.scelte) }
               : pkg?.name ? { label: 'Pacchetto', value: pkg.name } : null,
             // Cosa si è comprato, come lo ha scritto il locale (migration 146).
-            ev.comprende?.trim() ? { label: 'Comprende', value: ev.comprende.trim() } : null,
+            !(ev.packages || []).length && ev.comprende?.trim() ? { label: 'Comprende', value: ev.comprende.trim() } : null,
             b.total_amount ? { label: 'Totale', value: `€${b.total_amount}` } : null,
           ].filter(Boolean),
           bodyHtml: fraseTermine && linkAnnulla

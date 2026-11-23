@@ -9,6 +9,8 @@ import { getEntityAziendaId } from '@/lib/server-auth'
 import { localizeEntity } from '@/lib/translate'
 import { soloAperti, soloConclusi } from '@/lib/evento-concluso'
 import { postiPubblici } from '@/lib/posti-evento'
+import { puoIncassare } from '@/lib/checkout'
+import { haOpzioni } from '@/lib/opzioni-evento'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // Un tetto solo contro gli abusi: l'archivio è la prova che le serate si fanno,
@@ -22,7 +24,7 @@ export async function eventiPubblici({ entity_tipo, entity_id, lang = 'it', pass
   let query = supabaseAdmin.from('eventi')
     // `aziende(fuso_orario)` non è un dettaglio: le schede mostrano l'ora
     // dell'evento, e senza fuso ognuno la leggerebbe nel proprio.
-    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, comprende, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, prezzo_modo, date_start, date_end, location, price, seats_total, seats_booked, posti_riservati, packages, opzioni_prenotate, aziende(fuso_orario)')
+    .select('id, slug, title, description, cover_url, formato_cover, cover_focal, cta_label, cta_condizioni, comprende, mostra_prezzo, mostra_prezzo_pagina, prezzo_testo, prezzo_modo, date_start, date_end, location, price, seats_total, seats_booked, posti_riservati, packages, opzioni_prenotate, acconto_percentuale, azienda_id, aziende(fuso_orario)')
     .eq('published', true).eq('active', true)
   query = passati
     ? soloConclusi(query).order('date_start', { ascending: false }).limit(MAX_PASSATI)
@@ -49,7 +51,13 @@ export async function eventiPubblici({ entity_tipo, entity_id, lang = 'it', pass
   // Il fuso esce come campo semplice: l'oggetto annidato dell'unione non è
   // roba che le pagine debbano conoscere.
   // I posti escono solo come «quanti se ne possono prenotare»: vedi postiPubblici.
-  let eventi = (data || []).map(({ aziende, ...ev }) => ({ ...postiPubblici(ev), fuso: aziende?.fuso_orario || null }))
+  // La quota delle opzioni è vera solo se la cassa si apre: si chiede una volta
+  // per azienda. `azienda_id` serve solo a questo e non esce.
+  const incassano = {}
+  for (const ev of data || []) {
+    if (haOpzioni(ev) && !(ev.azienda_id in incassano)) incassano[ev.azienda_id] = await puoIncassare(ev.azienda_id)
+  }
+  let eventi = (data || []).map(({ aziende, azienda_id, ...ev }) => ({ ...postiPubblici(ev, { incassa: !!incassano[azienda_id] }), fuso: aziende?.fuso_orario || null }))
   if (lang === 'en') eventi = await Promise.all(eventi.map(ev => localizeEntity(ev, 'evento', lang)))
   return { eventi }
 }

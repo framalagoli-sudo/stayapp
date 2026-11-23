@@ -226,19 +226,35 @@ export function riassuntoScelte(scelte) {
 
 // ── Quello che vede il pubblico ─────────────────────────────────────────────
 //
-// Di ogni opzione: nome, descrizione, prezzo, cosa comprende e quanti posti si
-// possono ancora prenotare online (`posti_online`, null = senza limite).
+// Di ogni opzione: nome, descrizione, prezzo, cosa comprende, quanti posti si
+// possono ancora prenotare online (`posti_online`, null = senza limite) e quanto
+// si paga prenotando (`quota`, 0–100).
 // ⛔ Mai capienza, prenotati e posti tenuti per il telefono: con due di loro e i
-// posti online il terzo si ricava (vedi `postiPubblici`). Mai la quota: la
-// cifra da pagare la calcola il server nel riepilogo.
-export function opzioniPubbliche(evento) {
+// posti online il terzo si ricava (vedi `postiPubblici`).
+//
+// `quota` è quella che la cassa chiederà davvero: con `incassa` falso (nessun
+// conto collegato) la cassa non si apre e si paga tutto sul posto, quindi 0.
+// La pagina la scrive sotto il prezzo: prima il locale la ripeteva a mano nella
+// descrizione («Paga ora il 20%…»), e cambiando la quota la frase restava vecchia.
+export function opzioniPubbliche(evento, { incassa = false } = {}) {
   const occupati = evento?.opzioni_prenotate || {}
+  const quotaEvento = Math.min(100, Math.max(0, parseInt(evento?.acconto_percentuale) || 0))
   return (evento?.packages || []).map(o => {
     const p = postiOpzione(o, occupati[o.id])
+    const quota = o.acconto_percentuale ?? quotaEvento
     return {
       id: o.id, name: o.name, description: o.description || '', price: Number(o.price) || 0,
       includes: Array.isArray(o.includes) ? o.includes : [],
       posti_online: p.illimitato ? null : p.liberiOnline,
+      quota: incassa && Number(o.price) > 0 ? Math.min(100, Math.max(0, Number(quota) || 0)) : 0,
     }
   })
+}
+
+// La frase sotto il prezzo di un'opzione, dalla sua quota.
+export function fraseQuota(quota, lang = 'it') {
+  const en = lang === 'en'
+  if (quota >= 100) return en ? 'Paid when you book' : 'Si paga alla prenotazione'
+  if (quota > 0) return en ? `${quota}% when you book, the rest on site` : `${quota}% alla prenotazione, il resto sul posto`
+  return en ? 'Pay on site' : 'Si paga sul posto'
 }

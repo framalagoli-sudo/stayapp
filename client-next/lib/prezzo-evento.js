@@ -76,8 +76,14 @@ export function prezzoPersona(evento, prezzoScelto, { gratuito = 'Gratuito', per
 // dalla descrizione dell'evento. La usano pagina, app del QR, riepilogo, cassa
 // di Stripe ed email di conferma: la stessa frase ovunque. Vuoto = '' (non si
 // scrive niente).
+//
+// ⛔ Con le opzioni (migration 148) «cosa comprende» sta SOLO dentro ogni opzione:
+// la riga generale dell'evento non si usa più. Prima finiva sotto ogni opzione —
+// «cena + spettacolo» stampato anche sulla ricevuta di chi aveva preso l'ingresso
+// al bancone (Francesco, 23/11/2026).
 export function cosaComprende(evento, pacchetto = null) {
   const pulito = s => (typeof s === 'string' ? s.replace(/\s+/g, ' ').trim() : '')
   const pkg = pacchetto ? [pulito(pacchetto.name), pulito(pacchetto.description)].filter(Boolean).join(' — ') : ''
-  return [pkg, pulito(evento?.comprende)].filter(Boolean).join(' · ').slice(0, 400)
+  const generale = evento?.packages?.length ? '' : pulito(evento?.comprende)
+  return [pkg, generale].filter(Boolean).join(' · ').slice(0, 400)
 }

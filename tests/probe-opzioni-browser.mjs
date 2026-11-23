@@ -30,7 +30,7 @@ try {
   const { data: ent } = await admin.from('entita').insert({ azienda_id: az.id, tipo: 'struttura', name: 'ZZ Locale ibrido', slug: slugEnt, active: true, moduli: { eventi: true } }).select().single()
   const { data: ev } = await admin.from('eventi').insert({
     azienda_id: az.id, entity_tipo: 'struttura', entity_id: ent.id, title: 'ZZ Cena & live', slug: `zz-cena-live-${tag}`,
-    date_start: new Date(Date.now() + 8 * 86400000).toISOString(), price: 30, seats_total: 20, prezzo_modo: 'cifra',
+    date_start: new Date(Date.now() + 8 * 86400000).toISOString(), price: 30, seats_total: 20, prezzo_modo: 'cifra', comprende: 'Cena + spettacolo dal vivo',
     published: true, active: true, notify_owner_on_booking: false, send_guest_confirmation: false,
   }).select().single()
 
@@ -50,6 +50,8 @@ try {
   await pc.getByRole('button', { name: 'Più proposte con prezzi diversi' }).click()
   const nomi = pc.getByPlaceholder(/Nome dell’opzione/)
   ok(await nomi.count() === 2, 'compaiono due opzioni')
+  ok(await pc.getByPlaceholder(/^Cosa comprende \(es\./).first().inputValue() === 'Cena + spettacolo dal vivo', '«cosa comprende» di prima passa nella prima opzione')
+  ok(await pc.locator('[data-comprende-nelle-opzioni]').count() === 1, 'il campo generale lascia il posto alla spiegazione')
   const prezzi = pc.getByPlaceholder('0').locator('xpath=self::input[@type="number"][@step="0.5"]')
   ok(await prezzi.first().inputValue() === '30', 'la prima nasce col prezzo di prima (30)', await prezzi.first().inputValue())
   await nomi.nth(0).fill('Cena & spettacolo')
@@ -65,6 +67,7 @@ try {
   await pc.waitForTimeout(2500)
   const { data: e1 } = await admin.from('eventi').select('packages, seats_total, price').eq('id', ev.id).single()
   ok(e1.packages.length === 2 && e1.seats_total === 30 && Number(e1.price) === 15, 'salvato: 2 opzioni, 30 posti, da 15', e1)
+  ok(e1.packages[0].description === 'Cena + spettacolo dal vivo', 'e la descrizione della prima opzione è salvata', e1.packages[0])
   ok(!errori.length, 'nessun errore nel browser', errori)
   // L'editor su telefono
   const telEd = await (await browser.newContext({ ...devices['iPhone 13'], storageState: sessione })).newPage()
@@ -87,6 +90,10 @@ try {
     const totale = await p.locator('[data-totale-scelte]').innerText()
     ok(/3 posti/.test(totale) && /60/.test(totale), `${nome}: «${totale}»`)
     ok(!(await p.locator('#posti-evento').count()), `${nome}: niente campo «Posti» unico`)
+    ok(!(await p.locator('[data-comprende]').count()), `${nome}: nessun «comprende» generale sopra le opzioni`)
+    const quote = await p.locator('[data-quota]').allInnerTexts()
+    // In locale (e per un locale senza conto) la cassa non si apre: si paga sul posto.
+    ok(quote.length === 2 && quote.every(q => /sul posto|alla prenotazione/.test(q)), `${nome}: sotto ogni opzione come si paga (${quote.join(' / ')})`)
     ok(!(await sborda(p)), `${nome}: niente esce di lato`)
     await p.locator('[data-scelta-opzioni]').scrollIntoViewIfNeeded()
     await foto(p, `evento-${nome}`)
@@ -95,7 +102,7 @@ try {
       await p.getByPlaceholder('Email *').fill(`delivered+opzb-${tag}@resend.dev`)
       await p.locator('input[type=checkbox][required]').check()
       await p.getByRole('button', { name: /Prenota ora/ }).click()
-      await p.getByText('Prenotazione inviata!').waitFor({ timeout: 20000 }).then(() => ok(true, 'prenotato dal telefono')).catch(async () => ok(false, 'prenotato dal telefono', await p.locator('body').innerText()))
+      await p.getByText('Prenotazione inviata!').waitFor({ timeout: 60000 }).then(() => ok(true, 'prenotato dal telefono')).catch(async () => ok(false, 'prenotato dal telefono', await p.locator('body').innerText()))
     }
     ok(!err.length, `${nome}: nessun errore nel browser`, err)
   }

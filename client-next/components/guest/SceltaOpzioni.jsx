@@ -1,5 +1,6 @@
 'use client'
 import { testiEvento } from './evento-testi'
+import { fraseQuota } from '@/lib/opzioni-evento'
 
 // Quanti posti per ogni opzione di un evento (migration 148): una riga per
 // opzione col suo prezzo e i pulsanti − e +, e sotto il totale.
@@ -44,6 +45,11 @@ export default function SceltaOpzioni({ opzioni = [], quante = {}, onCambia, lan
                   ? <span style={{ fontWeight: 600, color: '#b42318', marginLeft: 8, fontSize: 13 }}>{T.esaurita}</span>
                   : max != null && max <= 5 && <span style={{ fontWeight: 500, color: c.tenue, marginLeft: 8, fontSize: 12.5 }}>{T.restano(max)}</span>}
               </div>
+              {/* Come si paga, dalla quota vera (0 se il locale non incassa online):
+                  non serve più scriverlo a mano nella descrizione. */}
+              {Number(o.price) > 0 && (
+                <div data-quota style={{ fontSize: 12.5, color: c.tenue, marginTop: 2 }}>{fraseQuota(Number(o.quota) || 0, lang)}</div>
+              )}
               {esaurita && listaAttesa && onLista && (
                 <button type="button" onClick={() => onLista(o.id)}
                   style={{ marginTop: 6, background: 'none', border: 'none', padding: 0, color: c.primario, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', textDecoration: 'underline' }}>

@@ -163,7 +163,7 @@ export async function POST(request, props) {
             ? righe.map(r => ({
               nome: `${evento.title} — ${r.nome}`, importo: r.importo, quantita: r.quantita,
               immagine: evento.cover_url || undefined,
-              descrizione: cosaComprende({ comprende: evento.comprende }, { description: (evento.packages || []).find(p => p.id === r.id)?.description }),
+              descrizione: (evento.packages || []).find(p => p.id === r.id)?.description || undefined,
             }))
             : [{
               nome: conto.tutto ? evento.title : `${evento.title} — acconto ${conto.perc}%`,

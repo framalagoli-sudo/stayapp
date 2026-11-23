@@ -4,7 +4,7 @@
 export default {
   voce: 'eventi',
   titolo: 'Eventi',
-  rivista: '2026-11-23',
+  rivista: '2026-11-24',
   percorsi: ['/admin/eventi'],
   pagine: [
     'components/admin/eventi/EventiListPage.jsx',
@@ -44,6 +44,8 @@ export default {
         'Più proposte nella stessa serata (per esempio «Cena & spettacolo» ai tavoli e «Ingresso + drink» al bancone): premi «Più proposte con prezzi diversi». Il prezzo e i posti di adesso diventano la prima opzione, e se c’erano già prenotazioni vanno lì.',
         'In «Opzioni e prezzi» ogni opzione ha nome, prezzo, posti (vuoto = senza limite), quanti tenerne per il telefono e quanto si paga prenotando: per esempio la cena al 100% e l’ingresso allo 0%, sul posto. I posti dell’evento sono la somma delle opzioni, li calcoliamo noi. Con «Aggiungi opzione» ne metti un’altra.',
         'Chi prenota sceglie quante di ognuna (1 cena e 2 ingressi, solo cene, solo ingressi) e vede il totale. Paga adesso la somma delle quote, il resto sul posto. Un’opzione esaurita si chiude da sola mentre le altre restano prenotabili, e chi la voleva si mette in lista d’attesa per quella.',
+        'Con più proposte «Cosa comprende il prezzo» si scrive dentro ogni opzione (se l’avevi già scritto, passa nella prima): chi prenota legge solo quello dell’opzione che sceglie, anche alla cassa e nell’email.',
+        'Come si paga non serve scriverlo: sotto il prezzo di ogni opzione la pagina dice da sola «Si paga sul posto», «30% alla prenotazione, il resto sul posto» o «Si paga alla prenotazione», dalla percentuale che hai messo. Senza un conto collegato in Pagamenti dice sempre «Si paga sul posto», perché è quello che succede.',
         'Un’opzione che ha già delle prenotazioni non si può togliere: prima annullale o spostale con «Modifica».',
       ],
     },
