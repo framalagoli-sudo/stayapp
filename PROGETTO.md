@@ -360,6 +360,10 @@ fatti**.
 1. **Il nostro**, ogni notte alle 3 su Cloudflare R2: un file
    `backup-AAAA-MM-GG.json.gz` con tutte le tabelle. Serve per recuperare
    *alcune* tabelle, o quando è l'account Supabase stesso il problema.
+   Gira come funzione di Vercel con **300 secondi** al massimo (24/11/2026: con
+   60 è stato fermato a metà ed è saltato un giorno). Il 24/11 durava ~53 s; se
+   si avvicina ai 200 va spezzato in due, e con un database grande si passa a
+   `pg_dump` fuori da Vercel.
 2. **Quelli di Supabase Pro**, automatici (Dashboard → Database → Backups). Per
    un ripristino completo sono più comodi.
 
@@ -720,4 +724,4 @@ Restano di pensiero, e non li controlla nessuna macchina: i costi, i piani, il
 
 ---
 
-*Documento di progetto — aggiornato all'11 novembre 2026.*
+*Documento di progetto — aggiornato al 24 novembre 2026.*

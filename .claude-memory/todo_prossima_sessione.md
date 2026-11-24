@@ -4,11 +4,13 @@ description: "Da dove riprendere — 20/11 SESSIONE CHIUSA: ripartire da DA_FARE
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-11-19T07:44:20.944Z
+  modified: 2026-11-24T13:24:05.511Z
   originSessionId: e263e4b1-058b-42a5-9135-875e7c667ea8
 ---
 
 # Si riprende da qui
+
+⭐ **21–23/11 (ripresa il 24/11 dopo riavvio del PC)** — eventi con opzioni per Garage 22 LIVE e verificati sulla loro serata del 26/11 (nota 94). Niente perso. Domande aperte e dettagli → [[project_session_2026_11_21_23]]. Se il PC si riavvia di nuovo: la trascrizione `.jsonl` più recente in `~/.claude/projects/C--Users-francesco-progetti-hospitality/` dice dove eravamo.
 
 ⭐ **20/11 — SESSIONE CHIUSA da Francesco.** Nessun codice: webhook Resend iscritto a delivered/opened/clicked e provato (battito `consegna-posta` acceso); tetto Resend gratis 100/giorno superato il 19/11 da Garage 22 → piano **`POSTA.md`** (lib/posta/, newsletter su SES, servizio su Resend gratis, tetto per azienda). **Ripartire così:** leggere `DA_FARE.md`; se Francesco ha creato l account AWS si parte con POSTA.md (guidarlo, poi utente IAM solo invio); verificare che la prossima newsletter di Garage 22 abbia le «consegnate»; ricordargli il messaggio a Garage 22 (una newsletter al giorno). Resoconto → [[project_session_2026_11_20]].
 
