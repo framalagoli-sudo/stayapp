@@ -25,13 +25,19 @@ const MESI_DI_STORICO = 12
 // Il bucket delle immagini dei clienti su Supabase Storage.
 const BUCKET_MEDIA = 'property-media'
 
-// Quanto tempo concedersi per copiare le immagini prima di lasciare il resto al
-// giro successivo. La copia è incrementale, quindi interromperla non fa danno:
-// domani riprende da dove si era fermata. Meglio un backup che finisce sempre
-// di uno che ogni tanto va in timeout e non scrive nemmeno le tabelle.
-// Il giro intero deve stare nei 60 secondi dichiarati dalle route: le tabelle
-// e gli account ne prendono una quindicina, il resto è per le immagini.
-const TEMPO_MASSIMO_MEDIA_MS = 45_000
+// Il giro intero deve stare nei 300 secondi dichiarati dalle tre route che lo
+// lanciano (cron, pannello, diagnostica). Le immagini si fermano quando ne
+// resta uno: compressione e caricamento devono sempre avere il loro tempo.
+// La copia è incrementale, quindi interromperla non fa danno: domani riprende
+// da dove si era fermata. Meglio un backup che finisce sempre di uno che va in
+// timeout e non scrive nemmeno le tabelle.
+// ⚠️ Prima il giro aveva 60 secondi e le immagini 45 contati dall'inizio: con
+// le tabelle salite a ~36 secondi le immagini non partivano più (nessuna foto
+// nuova copiata dal 19/11) e il 24/11 il caricamento è stato fermato a 60
+// secondi — niente archivio quel giorno e nessun errore, perché una funzione
+// fermata da fuori non arriva al suo catch.
+const DURATA_GIRO_MS = 300_000
+const MARGINE_FINALE_MS = 60_000
 
 // ⚠️ QUESTA LISTA VA AGGIORNATA A OGNI MODULO NUOVO.
 // Era rimasta ferma a quando il prodotto aveva meno funzioni: il 24/08/2026
@@ -297,8 +303,16 @@ export async function runBackup() {
   // importanti, i dati di più.
   let media = { errore: null }
   try {
-    media = await copiaMedia(r2, bucket, startedAt.getTime() + TEMPO_MASSIMO_MEDIA_MS)
+    media = await copiaMedia(r2, bucket, startedAt.getTime() + DURATA_GIRO_MS - MARGINE_FINALE_MS)
     console.log(`[backup] immagini: ${media.copiate} copiate, ${media.gia_presenti} già presenti, ${media.saltate_per_tempo} rimandate al prossimo giro`)
+    // «Rimandate» senza nessuna copiata vuol dire che il tempo finisce prima di
+    // cominciare: il giro dopo farà lo stesso e le foto nuove non entreranno
+    // mai nell'archivio. Va detto, non lasciato in un log.
+    if (media.saltate_per_tempo > 0 && media.copiate === 0) {
+      await logError('backup/immagini-ferme',
+        `Nessuna immagine copiata: ${media.saltate_per_tempo} rimandate perché il tempo del backup è finito prima. Le foto nuove non sono nell'archivio.`,
+        { alert: true })
+    }
     if (media.errori.length) {
       await logError('backup/immagini',
         `Immagini non copiate nell'archivio: ${media.errori.slice(0, 5).join(' · ')}`, { alert: true })

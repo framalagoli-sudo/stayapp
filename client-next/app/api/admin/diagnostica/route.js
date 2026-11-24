@@ -114,8 +114,9 @@ export async function GET(request) {
   } catch (e) { return Response.json({ error: e.message }, { status: 500 }) }
 }
 
-// Il backup su 45 tabelle non sta nei pochi secondi di default.
-export const maxDuration = 60
+// Fa girare anche il backup: deve dire lo stesso tempo della route del cron
+// (DURATA_GIRO_MS in lib/backup.js).
+export const maxDuration = 300
 
 // Due azioni, entrambe cose che si vogliono poter fare SUBITO e non domani:
 //   (nessuna) → manda un avviso di prova, per verificare che la catena arrivi

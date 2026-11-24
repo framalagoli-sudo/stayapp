@@ -7,7 +7,9 @@ import { battitoEControllo } from '@/lib/cron-battito'
 // diagnostica, che fa girare lo stesso backup a mano — qui mancava, e senza
 // nessuno se ne sarebbe accorto: un timeout di notte lascia solo una riga in
 // un log che non legge nessuno.
-export const maxDuration = 60
+// 300 come le altre due route che lanciano il backup: il tempo del giro è
+// contato in lib/backup.js (DURATA_GIRO_MS) e le tre devono dire lo stesso.
+export const maxDuration = 300
 
 export async function GET(request) {
   const auth = request.headers.get('authorization')

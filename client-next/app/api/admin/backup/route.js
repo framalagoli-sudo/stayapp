@@ -2,6 +2,9 @@ import { supabaseAdmin } from '@/lib/supabase-server'
 import { requireAuth } from '@/lib/server-auth'
 import { runBackup } from '@/lib/backup'
 
+// Lo stesso tempo della route del cron (DURATA_GIRO_MS in lib/backup.js).
+export const maxDuration = 300
+
 export async function POST(request) {
   const { user, response } = await requireAuth(request)
   if (response) return response
