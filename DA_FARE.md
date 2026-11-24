@@ -43,6 +43,11 @@
 - [ ] **Esportazione GDPR lenta**: con l'azienda piena di `probe-enumerazione` ha superato i 30 s
   (deploy del 19/11; la route ne ha 60, la sonda ora aspetta 65). Con un cliente grande rischia il
   timeout: renderla a più passaggi o in parallelo.
+- [ ] **Backup lanciato a mano** (pannello e Diagnostica) non scrive il battito `backup`: dopo un
+  recupero l'allarme «processo fermo» continua fino al cron della notte (24/11 scritto a mano).
+  Spostare `registraBattito('backup')` dentro `runBackup` a fine giro riuscito.
+- [ ] **Backup che cresce**: il 24/11 il giro durava ~53 s (tabelle ~36). Ora ha 300 s: quando si
+  avvicina ai 200, spezzarlo in due cron (tabelle e immagini) invece di allungarlo. `CLAUDE.md` nota 34.
 - [ ] Su `/en` il pulsante «Torna a…» della pagina evento resta in italiano.
 - [ ] Blog: date con `toLocaleDateString` senza fuso (vicino a mezzanotte, giorno diverso).
 - [ ] «Aggiungi opzione» del chatbot tagliato di 2 px a 360 px.
