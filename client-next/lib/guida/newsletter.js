@@ -4,18 +4,19 @@
 export default {
   voce: 'newsletter',
   titolo: 'Newsletter',
-  rivista: '2026-11-18',
+  rivista: '2026-11-25',
   percorsi: ['/admin/newsletter'],
   pagine: [
     'components/admin/NewsletterPage.jsx',
     'components/admin/NewsletterEditorPage.jsx',
     'components/admin/NewsletterStatistiche.jsx',
+    'components/admin/ConsigliNewsletter.jsx',
   ],
   pulsanti: [
     'Nuova newsletter', 'Bozze', 'Archivio inviate', 'Duplica',
     'Destinatari', 'Tutti gli iscritti', 'Escludi chi è in…', 'Modello', 'Semplice', 'Promozione', 'Notizie', 'Evento',
     'Oggetto email', 'Testo anteprima (preheader)', '✨ Genera oggetto', '✨ Genera testo',
-    'Programmazione invio', 'Rimuovi programmazione', 'Salva bozza', 'Anteprima', 'Computer', 'Telefono',
+    'Come arriva nella casella', 'Perché le newsletter finiscono in «Promozioni»', 'Programmazione invio', 'Rimuovi programmazione', 'Salva bozza', 'Anteprima', 'Computer', 'Telefono',
     'Invia email di test', 'Invia la newsletter', 'Invia ora',
     'Com’è andata', 'Hanno cliccato', 'L’hanno aperta', 'Non arrivate', 'Disiscritti', 'Cosa hanno premuto',
   ],
@@ -37,6 +38,7 @@ export default {
       testo: [
         'A destra c’è l’anteprima dell’email vera, con la riga com’è nella casella di posta; puoi passare fra «Computer» e «Telefono». Su telefono si alterna col pulsante «Anteprima».',
         '«Invia email di test» te ne manda una copia per vederla nella tua casella.',
+        'In «Come arriva nella casella» trovi i consigli sulla bozza così com’è: oggetto tutto maiuscolo o con parole da volantino, troppi link, tante foto e poche parole, testo anteprima vuoto. Si aggiornano mentre scrivi e non fermano l’invio.',
       ],
     },
     {
@@ -65,6 +67,8 @@ export default {
       r: 'Sì: nell’elenco premi «Duplica». Nasce una bozza uguale, da cambiare e mandare.' },
     { d: 'Chi si disiscrive viene tolto da solo?',
       r: 'Sì. Ogni email ha il link per annullare l’iscrizione, e chi lo usa (o il pulsante del suo programma di posta) non riceve più promozioni. Resta scritto quando e come si è tolto.' },
+    { d: 'Perché la mia newsletter arriva in «Promozioni» di Gmail?',
+      r: 'Perché Gmail riconosce le email mandate a tante persone insieme. Non è spam: arriva e viene aperta. Nessuno può garantire di evitarlo; aiuta chiedere a chi la riceve di spostarla in «Principale», scrivere come una persona (più testo che foto, un solo invito) e chiudere con una domanda a cui rispondere. In «Come arriva nella casella» premi «Perché le newsletter finiscono in «Promozioni»».' },
     { d: 'Una newsletter inviata si può modificare?',
       r: 'No: è partita così. Puoi duplicarla per mandarne una nuova.' },
   ],

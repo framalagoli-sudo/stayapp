@@ -8,6 +8,7 @@ import { buildNewsletterHtml, personalize, testoVuoto } from '@/lib/newsletter-h
 import RichTextEditor from '@/components/admin/RichTextEditor'
 import AiButton from '@/components/admin/AiButton'
 import NewsletterStatistiche from '@/components/admin/NewsletterStatistiche'
+import ConsigliNewsletter from '@/components/admin/ConsigliNewsletter'
 import { perCampoDataOra, daCampoDataOra, oraLocale } from '@/lib/fuso'
 
 const EMOJIS = [
@@ -568,6 +569,13 @@ export default function NewsletterEditorPage() {
             {templateId === 'notizie' && <NotizieFIelds c={content} setContent={setContent} inp={inp} label={label} disabled={isSent} />}
             {templateId === 'evento' && <EventoFields c={content} patch={patchContent} inp={inp} label={label} disabled={isSent} />}
           </Section>
+
+          {/* Consigli: cosa la fa sembrare pubblicità (non fermano l'invio) */}
+          {!isSent && (
+            <Section title="Come arriva nella casella">
+              <ConsigliNewsletter subject={subject} preheader={preheader} content={content} />
+            </Section>
+          )}
 
           {/* 4 · Quando parte */}
           {!isSent && (
