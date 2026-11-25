@@ -1,6 +1,6 @@
 ---
 name: todo-prossima-sessione
-description: "Da dove riprendere — 20/11 SESSIONE CHIUSA: ripartire da DA_FARE.md; posta → POSTA.md, aspetta account AWS di Francesco. Prima: 19/11 SESSIONE CHIUSA: ripartire da DA_FARE.md (spam marcato LIVE dopo migration 147). Prima: 10/11 SESSIONE CHIUSA: calendario prezzi + offerte fase 2 LIVE (Automax), da spiegare ad Automax + 2 sonde. Prima, dal 01/11: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
+description: "Da dove riprendere — 25/11 SESSIONE CHIUSA: ripartire da DA_FARE.md e da project_session_2026_11_25 (mostra posti LIVE; rilanciare smoke+sonde del deploy fermato; risposte su acconti step 5 e ZZ-ENUM). Prima: 20/11 SESSIONE CHIUSA: ripartire da DA_FARE.md; posta → POSTA.md, aspetta account AWS di Francesco. Prima: 19/11 SESSIONE CHIUSA: ripartire da DA_FARE.md (spam marcato LIVE dopo migration 147). Prima: 10/11 SESSIONE CHIUSA: calendario prezzi + offerte fase 2 LIVE (Automax), da spiegare ad Automax + 2 sonde. Prima, dal 01/11: sentinella A LIVE; Francesco deve scegliere dove gira la B (consigliata routine Claude in cloud), poi registro scadenze. Restano le 4 cose del 28/10 (Resend tracking/webhook, robots Cloudflare, frase privacy, Fatti trovare dall AI) e l allarme newsletter programmata ferma."
 metadata: 
   node_type: memory
   type: project
@@ -9,6 +9,8 @@ metadata:
 ---
 
 # Si riprende da qui
+
+⭐ **25/11 — SESSIONE CHIUSA da Francesco** («quando riprendiamo riprendiamo da qui»). Fatto: consigli «Come arriva nella casella» nella newsletter; **«Mostra quanti posti restano»** sugli eventi (migration 149 eseguita, LIVE, `probe-mostra-posti` verde in produzione, CLAUDE.md nota 95). **Ripartire così:** (1) leggere `DA_FARE.md`; (2) rilanciare smoke e sonde di sicurezza del deploy `fa45b7c3`, fermato dal sistema per memoria (resti CI già tolti) — prima misurare la memoria del PC; (3) chiedere le due risposte aperte: acconti a passi di 5 → step 1? e ZZ-ENUM-A/B togliere?; (4) ricordargli il messaggio a Garage 22 su «Mostra quanti posti restano» (serata del 26/11 ora scrive «Restano 27 posti»). Dettagli → [[project_session_2026_11_25]].
 
 ⭐ **21–23/11 (ripresa il 24/11 dopo riavvio del PC)** — eventi con opzioni per Garage 22 LIVE e verificati sulla loro serata del 26/11 (nota 94). Niente perso. Domande aperte e dettagli → [[project_session_2026_11_21_23]]. Se il PC si riavvia di nuovo: la trascrizione `.jsonl` più recente in `~/.claude/projects/C--Users-francesco-progetti-hospitality/` dice dove eravamo.
 

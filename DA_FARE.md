@@ -1,6 +1,6 @@
 # Da fare — l'elenco unico delle cose aperte
 
-> **Aggiornato il 23/11/2026.**
+> **Aggiornato il 25/11/2026.**
 >
 > È l'**unico** posto delle cose aperte di OltreNova (decisione di Francesco, 18/11/2026:
 > «ogni avvio e per ogni aggiornamento lo teniamo bello fresco, sennò ci intoppiamo»).
@@ -63,6 +63,10 @@
 - [ ] I numeri animati delle statistiche diventano scrivibili nell'editor solo a conteggio finito.
 
 ### A5. Manutenzione
+- [ ] **Sonde dopo il deploy del 25/11 (`fa45b7c3`)** — il sistema l'ha fermato per memoria durante gli
+  smoke, dopo Vercel e il push. La correzione è verificata (`probe-mostra-posti` verde in produzione) e
+  i resti degli smoke sono stati tolti (un `ci-…@playwright.internal` super_admin e le due
+  «ZZ-CI-SEC-TEST»), ma smoke e sonde di sicurezza vanno rilanciati con il PC libero.
 - [ ] **Next 16** — manutenzione, non sicurezza (PR Dependabot #67 aperta di proposito).
 - [ ] **Stripe 23** (PR #62) — cambia la versione API su tutte le chiamate: insieme a una prova in
   sandbox con un conto attivo (→ C).
@@ -83,6 +87,12 @@
 ---
 
 ## B. Aspettano una decisione di Francesco
+
+- [ ] **Percentuali di acconto a passi di 5** (25/11) — acconto dell'evento, di ogni opzione e delle
+  risorse hanno `step=5`: con un acconto del 33% il browser blocca il salvataggio senza dirlo bene
+  (stesso difetto della soglia dei posti, corretto il 25/11). Nessun dato vero colpito oggi. Proposta:
+  `step=1`; si nota solo che le frecce del campo vanno di 1 in 1.
+- [ ] **Aziende di prova «ZZ-ENUM-A/B»** (del 18/11) rimaste in produzione: toglierle o tenerle.
 
 - [ ] **Sentinella, parte B** — dove gira: routine Claude in cloud il lunedì (consigliata) o processo
   dentro OltreNova. Primo pezzo in ogni caso: registro delle scadenze in `PROGETTO.md`.
@@ -149,6 +159,10 @@
 - [ ] **Contratto art. 28 GDPR** verso i clienti (verificare nei Termini del 31/08, poi un legale).
 
 ### C3. Clienti
+- [ ] **Garage 22** — dire di «Mostra quanti posti restano» nell'editor dell'evento (Sempre · Quando
+  stanno finendo, da una % di posti occupati · Mai; `CLAUDE.md` nota 95). Con «Sempre», sotto
+  un'opzione coi posti contati ora compare sempre «Restano N posti» (prima solo dai 5 in giù): sulla
+  serata del 26/11 si legge «Restano 27 posti». Se non lo vogliono, «Quando stanno finendo».
 - [ ] **Garage 22** — dire che negli eventi c'è «Più proposte con prezzi diversi» (cena 30 € + ingresso
   con drink 15 €, posti e quota per ognuna, prenotazioni miste, lista d'attesa per opzione), e che le
   prenotazioni già fatte finiscono nella prima opzione. (`CLAUDE.md` nota 94) Le stanno già usando (serata De Cicco &

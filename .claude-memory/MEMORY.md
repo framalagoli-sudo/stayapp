@@ -22,6 +22,7 @@
 - [L'AI non inventa fatti](feedback_niente_fatti_inventati_ai.md) — recensioni inventate rifiutate
 
 ## Sessioni
+- [25/11 mostra posti sugli eventi, consigli newsletter](project_session_2026_11_25.md)
 - [21–23/11 eventi con opzioni (Garage 22)](project_session_2026_11_21_23.md)
 - [20/11 webhook Resend, tetto 100/giorno, piano POSTA.md](project_session_2026_11_20.md)
 - [17–19/11 Panoramic, colori pannello, export GDPR, spam marcato](project_session_2026_11_17_19.md)
