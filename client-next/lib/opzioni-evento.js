@@ -19,6 +19,7 @@
 // ⚠️ Nessuna dipendenza tranne `gruppi-prenotazioni-evento` (anch'essa senza):
 // lo importano componenti che girano nel browser.
 import { occupaPosto } from './gruppi-prenotazioni-evento.js'
+import { postiVisibili } from './mostra-posti.js'
 
 export const MAX_OPZIONI = 12
 export const MAX_QUANTITA = 200
@@ -246,6 +247,8 @@ export function opzioniPubbliche(evento, { incassa = false } = {}) {
       id: o.id, name: o.name, description: o.description || '', price: Number(o.price) || 0,
       includes: Array.isArray(o.includes) ? o.includes : [],
       posti_online: p.illimitato ? null : p.liberiOnline,
+      // Stessa regola dell'evento, sui posti dell'opzione (lib/mostra-posti.js).
+      posti_visibili: postiVisibili(p, evento),
       quota: incassa && Number(o.price) > 0 ? Math.min(100, Math.max(0, Number(quota) || 0)) : 0,
     }
   })

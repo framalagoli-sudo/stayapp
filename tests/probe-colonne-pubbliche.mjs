@@ -33,6 +33,10 @@ const AMMESSE = {
                   // (null = senza limite). Capienza, prenotati e riservati no: vedi
                   // VIETATE qui sotto e `postiPubblici` in lib/posti-evento.js.
                   'posti_online',
+                  // 25/11: se il numero dei posti si scrive (sì/no deciso dal server
+                  // con la regola del locale: lib/mostra-posti.js). La regola e la
+                  // soglia non escono.
+                  'posti_visibili',
                   // 19–21/09: come si scrive il prezzo e se il telefono è obbligatorio
                   // nel modulo; `lingua` dice in che lingua sono i dati. Tutto ciò che
                   // la scheda pubblica deve sapere per disegnarsi.

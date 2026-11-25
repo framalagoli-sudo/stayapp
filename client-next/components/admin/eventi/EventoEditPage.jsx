@@ -7,6 +7,7 @@ import { FORMATI, FORMATO_PREDEFINITO, rapportoDi, fotoTroppoPesante } from '@/l
 import { FocalPointPicker } from '@/components/admin/FocalPointPicker'
 import { SelettoreFormato } from '@/components/admin/SelettoreFormato'
 import { perCampoDataOra, daCampoDataOra } from '@/lib/fuso'
+import { modoPosti, sogliaPosti, SOGLIA_PREDEFINITA } from '@/lib/mostra-posti'
 import { Trash2, Plus, X, Upload, Share2 } from 'lucide-react'
 import PostSocialModal from '../../../components/admin/PostSocialModal'
 
@@ -52,6 +53,7 @@ export default function EventoEditPage() {
     // lista d'attesa che si muove da sola (decisione di Francesco, 26/10). Sugli
     // eventi che c'erano la lista automatica resta spenta: la colonna nasce false.
     annullabile: true, annullabile_ore: 24, lista_automatica: true,
+    mostra_posti: 'sempre', mostra_posti_soglia: SOGLIA_PREDEFINITA,
   })
   const [cover, setCover] = useState(null)       // URL attuale
   const [formato, setFormato] = useState(FORMATO_PREDEFINITO)
@@ -102,6 +104,8 @@ export default function EventoEditPage() {
           annullabile:      ev.annullabile ?? true,
           annullabile_ore:  ev.annullabile_ore ?? 24,
           lista_automatica: ev.lista_automatica ?? false,
+          mostra_posti:        modoPosti(ev.mostra_posti),
+          mostra_posti_soglia: ev.mostra_posti_soglia ?? SOGLIA_PREDEFINITA,
           notify_owner_on_booking: ev.notify_owner_on_booking ?? true,
           send_guest_confirmation: ev.send_guest_confirmation ?? true,
           packages:    (ev.packages || []).map(p => ({
@@ -158,6 +162,56 @@ export default function EventoEditPage() {
       ? pkg.includes.filter(k => k !== key)
       : [...pkg.includes, key]
     updatePkg(pkgId, { includes })
+  }
+
+  // Se sul sito e nell'app del QR si legge quanti posti restano (migration 149).
+  // «60 posti disponibili» su una serata appena aperta dice «non è venuto
+  // nessuno»: il locale sceglie sempre, mai, o da una percentuale di occupati.
+  // Ha senso solo con posti limitati; «esaurito» si vede comunque.
+  function renderMostraPosti() {
+    const limitati = form.packages.length > 0
+      ? form.packages.some(p => Number(p.posti) > 0)
+      : Number(form.seats_total) > 0
+    if (!limitati) return null
+    const scelte = [
+      { k: 'sempre', t: 'Sempre' },
+      { k: 'soglia', t: 'Quando stanno finendo' },
+      { k: 'mai',    t: 'Mai' },
+    ]
+    const modo = modoPosti(form.mostra_posti)
+    return (
+      <div style={fieldWrap} data-mostra-posti>
+        <label style={lbl}>Mostra quanti posti restano</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+          {scelte.map(o => {
+            const scelto = modo === o.k
+            return (
+              <button key={o.k} type="button" aria-pressed={scelto} onClick={() => set('mostra_posti', o.k)}
+                style={{ padding: '7px 14px', borderRadius: 20, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                  border: `1.5px solid ${scelto ? '#1a1a2e' : '#ddd'}`, background: scelto ? '#1a1a2e' : '#fff', color: scelto ? '#fff' : '#444' }}>
+                {o.t}
+              </button>
+            )
+          })}
+        </div>
+        {modo === 'soglia' && (
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, fontSize: 13, color: '#444', marginBottom: 6 }}>
+            <span>Il numero compare quando è occupato il</span>
+            <input type="number" min="1" max="99" step="5" value={form.mostra_posti_soglia}
+              onChange={e => set('mostra_posti_soglia', e.target.value)}
+              onBlur={() => set('mostra_posti_soglia', sogliaPosti(form.mostra_posti_soglia))}
+              aria-label="Percentuale di posti occupati" style={{ ...inp, width: 80 }} />
+            <span>% dei posti</span>
+          </div>
+        )}
+        <p style={{ margin: 0, fontSize: 12, color: '#999', lineHeight: 1.5 }}>
+          {modo === 'sempre' && <>Sul sito e nell’app del QR si legge «48 posti disponibili» fin dall’inizio.</>}
+          {modo === 'soglia' && <>Finché la sala è vuota non si scrive niente; poi «Restano 6 posti». Contano come occupati anche i posti tenuti per il telefono.</>}
+          {modo === 'mai' && <>Il numero non si vede mai.</>}
+          {' '}«Esaurito» si vede sempre.{form.packages.length > 0 && <> Vale per ogni opzione, sui suoi posti.</>}
+        </p>
+      </div>
+    )
   }
 
   // «Opzioni e prezzi»: ogni opzione ha nome, prezzo, posti, posti per il
@@ -289,6 +343,8 @@ export default function EventoEditPage() {
         posti_riservati: form.posti_riservati === '' ? 0 : Math.max(0, parseInt(form.posti_riservati) || 0),
         // Vuoto = 24, come scritto accanto al campo.
         annullabile_ore: form.annullabile_ore === '' ? 24 : Math.min(720, Math.max(0, parseInt(form.annullabile_ore) || 0)),
+        mostra_posti:        modoPosti(form.mostra_posti),
+        mostra_posti_soglia: sogliaPosti(form.mostra_posti_soglia),
         date_start:  daCampoDataOra(form.date_start, fuso)?.toISOString() || null,
         date_end:    daCampoDataOra(form.date_end, fuso)?.toISOString()   || null,
         entity_tipo: safeEntityId ? (form.entity_tipo || null) : null,
@@ -686,6 +742,8 @@ export default function EventoEditPage() {
             Es. «Cena & spettacolo» e «Ingresso + drink», ognuna coi suoi posti e il suo prezzo. Chi prenota può prenderne più d’una insieme.
           </p>
           </>)}
+
+          {renderMostraPosti()}
 
           {entityOptions.length > 0 && (
             <div style={fieldWrap}>

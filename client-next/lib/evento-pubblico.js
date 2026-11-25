@@ -23,6 +23,8 @@ export const CAMPI_EVENTO = [
   'id', 'slug', 'title', 'description', 'cover_url', 'formato_cover', 'cover_focal',
   'cta_label', 'cta_condizioni', 'comprende', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
   'date_start', 'date_end', 'location', 'price', 'seats_total', 'seats_booked', 'posti_riservati', 'packages', 'opzioni_prenotate', 'acconto_percentuale',
+  // Se il numero dei posti si scrive: lo legge postiPubblici, al pubblico esce solo il sì/no.
+  'mostra_posti', 'mostra_posti_soglia',
   // ⚠️ Senza queste due la pagina non saprebbe che le prenotazioni sono chiuse:
   // si salverebbe nel pannello e non si vedrebbe sul sito — è già successo.
   'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'lista_attesa',

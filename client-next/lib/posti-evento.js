@@ -15,6 +15,7 @@
 // ⚠️ Nessuna dipendenza (le opzioni sono a loro volta senza): lo importano sia
 // i componenti del browser sia le route.
 import { opzioniPubbliche } from './opzioni-evento'
+import { postiVisibili } from './mostra-posti'
 
 export function postiEvento(evento) {
   const capienza = Number(evento?.seats_total) || 0
@@ -47,14 +48,18 @@ export function postiEvento(evento) {
 // `incassa` = il locale ha un conto che incassa: serve a dire la quota vera
 // delle opzioni (senza conto si paga tutto sul posto).
 export function postiPubblici(evento, { incassa = false } = {}) {
-  const { seats_total, seats_booked, posti_riservati, opzioni_prenotate, packages, acconto_percentuale, ...resto } = evento || {}
+  const { seats_total, seats_booked, posti_riservati, opzioni_prenotate, packages, acconto_percentuale, mostra_posti, mostra_posti_soglia, ...resto } = evento || {}
   const p = postiEvento({ seats_total, seats_booked, posti_riservati })
+  // Se il numero si scrive lo decide il locale (lib/mostra-posti.js): esce solo
+  // il sì/no, mai la regola né la soglia.
+  const visibilita = { mostra_posti, mostra_posti_soglia }
   // Le opzioni hanno posti e posti per il telefono loro: escono solo come
   // «quanti se ne possono ancora prenotare», con la stessa regola.
   return {
     ...resto,
-    packages: opzioniPubbliche({ packages, opzioni_prenotate, acconto_percentuale }, { incassa }),
+    packages: opzioniPubbliche({ packages, opzioni_prenotate, acconto_percentuale, ...visibilita }, { incassa }),
     posti_online: p.illimitato ? null : p.liberiOnline,
+    posti_visibili: postiVisibili(p, visibilita),
   }
 }
 

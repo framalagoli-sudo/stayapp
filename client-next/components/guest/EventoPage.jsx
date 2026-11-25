@@ -396,8 +396,10 @@ export default function EventoPage({ iniziale = null, dominioCliente = null, lin
             </span>
           )}
           {/* ⚠️ «0 posti disponibili» è un modo goffo di dire «esaurito», e
-              «-2 posti» — che poteva succedere — è un modo di sembrare rotti. */}
-          {rimasti !== null && !concluso && (
+              «-2 posti» — che poteva succedere — è un modo di sembrare rotti.
+              Il numero si scrive solo se il locale lo vuole (`posti_visibili`,
+              deciso dal server: lib/mostra-posti.js); «esaurito» sempre. */}
+          {rimasti !== null && !concluso && (rimasti <= 0 || evento.posti_visibili !== false) && (
             <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#555' }}>
               <Users size={15} strokeWidth={1.5} color="#00b5b5" />
               {rimasti > 0 ? T.postiDisponibili(rimasti) : T.esaurito}

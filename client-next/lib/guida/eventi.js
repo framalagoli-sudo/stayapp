@@ -4,7 +4,7 @@
 export default {
   voce: 'eventi',
   titolo: 'Eventi',
-  rivista: '2026-11-24',
+  rivista: '2026-11-25',
   percorsi: ['/admin/eventi'],
   pagine: [
     'components/admin/eventi/EventiListPage.jsx',
@@ -16,6 +16,7 @@ export default {
     'Nuovo evento', 'In programma', 'Passati', 'Prenotazioni →', 'Crea evento', 'Salva modifiche', 'Copertina',
     'Il prezzo, come lo vede chi guarda', 'Gratuito', 'Una cifra', 'Lo scrivo io', 'Cosa comprende il prezzo',
     'Il pulsante di prenotazione', 'Posti disponibili', 'Di cui tenuti per il telefono', 'Quanto si paga prenotando (%)',
+    'Mostra quanti posti restano', 'Sempre', 'Quando stanno finendo', 'Mai',
     'Pubblicato', 'Chiedi il telefono per forza', 'Non accetto piu prenotazioni',
     'Chi ha prenotato può annullare da solo', 'Quando si libera un posto, offrilo al primo in lista',
     'Avvisami di ogni prenotazione', "Manda conferma all'ospite", 'Più proposte con prezzi diversi', 'Opzioni e prezzi', 'Aggiungi opzione', 'Post social',
@@ -47,6 +48,7 @@ export default {
         'Con più proposte «Cosa comprende il prezzo» si scrive dentro ogni opzione (se l’avevi già scritto, passa nella prima): chi prenota legge solo quello dell’opzione che sceglie, anche alla cassa e nell’email.',
         'Come si paga non serve scriverlo: sotto il prezzo di ogni opzione la pagina dice da sola «Si paga sul posto», «30% alla prenotazione, il resto sul posto» o «Si paga alla prenotazione», dalla percentuale che hai messo. Senza un conto collegato in Pagamenti dice sempre «Si paga sul posto», perché è quello che succede.',
         'Un’opzione che ha già delle prenotazioni non si può togliere: prima annullale o spostale con «Modifica».',
+        '«Mostra quanti posti restano» decide se sul sito e nell’app del QR si legge il numero dei posti liberi. «Sempre» lo scrive fin dall’inizio («48 posti disponibili»). «Quando stanno finendo» non scrive niente finché è occupata la percentuale che scegli (per esempio 80%), poi «Restano 6 posti»: utile perché una sala che sembra vuota non invoglia. I posti tenuti per il telefono contano come occupati. «Mai» non lo scrive mai. «Esaurito» si vede in ogni caso, e con più proposte la scelta vale per ognuna, sui suoi posti.',
       ],
     },
     {

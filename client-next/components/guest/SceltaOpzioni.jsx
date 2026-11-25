@@ -43,7 +43,7 @@ export default function SceltaOpzioni({ opzioni = [], quante = {}, onCambia, lan
                 {Number(o.price) > 0 ? euro(o.price) : T.gratis}
                 {esaurita
                   ? <span style={{ fontWeight: 600, color: '#b42318', marginLeft: 8, fontSize: 13 }}>{T.esaurita}</span>
-                  : max != null && max <= 5 && <span style={{ fontWeight: 500, color: c.tenue, marginLeft: 8, fontSize: 12.5 }}>{T.restano(max)}</span>}
+                  : max != null && o.posti_visibili && <span style={{ fontWeight: 500, color: c.tenue, marginLeft: 8, fontSize: 12.5 }}>{T.restano(max)}</span>}
               </div>
               {/* Come si paga, dalla quota vera (0 se il locale non incassa online):
                   non serve più scriverlo a mano nella descrizione. */}

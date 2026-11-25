@@ -3,6 +3,7 @@ import { formatoValido, focalValido } from '@/lib/formati-foto'
 import { requireRecordAccess, entitaDellaAzienda } from '@/lib/server-auth'
 import { slugEvento, slugLibero } from '@/lib/evento-indirizzo'
 import { annullamentoPulito } from '@/lib/annullamento-regole'
+import { modoPosti, sogliaPosti } from '@/lib/mostra-posti'
 import { muoviListaAttesa } from '@/lib/lista-attesa-automatica'
 import { preparaOpzioni } from '@/lib/opzioni-salvataggio'
 import { recomputeEventSeats } from '@/lib/event-seats'
@@ -19,7 +20,7 @@ const ALLOWED = ['title', 'description', 'cover_url', 'date_start', 'date_end',
   'notify_owner_on_booking', 'send_guest_confirmation', 'formato_cover', 'cover_focal',
   'cta_label', 'cta_condizioni', 'comprende', 'acconto_percentuale', 'mostra_prezzo', 'mostra_prezzo_pagina', 'prezzo_testo', 'prezzo_modo', 'telefono_obbligatorio',
   'prenotazioni_chiuse', 'prenotazioni_chiuse_testo', 'slug',
-  'annullabile', 'annullabile_ore', 'lista_automatica']
+  'annullabile', 'annullabile_ore', 'lista_automatica', 'mostra_posti', 'mostra_posti_soglia']
 
 export async function GET(request, props) {
   const params = await props.params;
@@ -62,6 +63,9 @@ export async function PATCH(request, props) {
     // rifiuterebbe comunque, con un 500 al posto di una risposta chiara.
 
     if ('prezzo_modo' in payload && !MODI_PREZZO.includes(payload.prezzo_modo)) payload.prezzo_modo = null
+    // Quando si vede il numero dei posti: catalogo chiuso, soglia 1–99 (migration 149).
+    if ('mostra_posti' in payload) payload.mostra_posti = modoPosti(payload.mostra_posti)
+    if ('mostra_posti_soglia' in payload) payload.mostra_posti_soglia = sogliaPosti(payload.mostra_posti_soglia)
     if ('mostra_prezzo' in payload) payload.mostra_prezzo = payload.mostra_prezzo !== false
     if ('mostra_prezzo_pagina' in payload) payload.mostra_prezzo_pagina = payload.mostra_prezzo_pagina !== false
     annullamentoPulito(payload)
