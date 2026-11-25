@@ -197,7 +197,7 @@ export default function EventoEditPage() {
         {modo === 'soglia' && (
           <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, fontSize: 13, color: '#444', marginBottom: 6 }}>
             <span>Il numero compare quando è occupato il</span>
-            <input type="number" min="1" max="99" step="5" value={form.mostra_posti_soglia}
+            <input type="number" min="1" max="99" step="1" value={form.mostra_posti_soglia}
               onChange={e => set('mostra_posti_soglia', e.target.value)}
               onBlur={() => set('mostra_posti_soglia', sogliaPosti(form.mostra_posti_soglia))}
               aria-label="Percentuale di posti occupati" style={{ ...inp, width: 80 }} />
